@@ -14,10 +14,12 @@ import WebKit
 
 struct ElementView: View {
     let element: CanvasElement
+    let isSelected: Bool
     let isEditingText: Bool
     @Binding var editingText: String
     let dragOffset: CGSize
     let onSelect: () -> Void
+    let onMultiSelect: () -> Void
     let onDragChanged: (CGSize) -> Void
     let onDragEnded: (CGSize) -> Void
     let onTextSubmit: (String) -> Void
@@ -131,6 +133,7 @@ struct ElementView: View {
                         .position(element.position)
                         .offset(dragOffset)
                         .onTapGesture { onSelect() }
+                        .onLongPressGesture(minimumDuration: 0.1) { onMultiSelect() }
                         .gesture(drag)
                 }
 
@@ -144,6 +147,7 @@ struct ElementView: View {
                     .position(element.position)
                     .offset(dragOffset)
                     .onTapGesture { onSelect() }
+                    .onLongPressGesture(minimumDuration: 0.1) { onMultiSelect() }
                     .gesture(drag)
 
             case .oval:
@@ -156,6 +160,7 @@ struct ElementView: View {
                     .position(element.position)
                     .offset(dragOffset)
                     .onTapGesture { onSelect() }
+                    .onLongPressGesture(minimumDuration: 0.1) { onMultiSelect() }
                     .gesture(drag)
             case .line(let rotation):
                 RoundedRectangle(cornerRadius: 10)
@@ -167,6 +172,7 @@ struct ElementView: View {
                     .position(element.position)
                     .offset(dragOffset)
                     .onTapGesture { onSelect() }
+                    .onLongPressGesture(minimumDuration: 0.1) { onMultiSelect() }
                     .gesture(drag)
             case .website(let url):
 //                if finishedLoading {
@@ -221,6 +227,7 @@ struct ElementView: View {
                     .position(element.position)
                     .offset(dragOffset)
                     .onTapGesture { onSelect() }
+                    .onLongPressGesture(minimumDuration: 0.1) { onMultiSelect() }
                     .gesture(drag)
                 }
             case .drawing:

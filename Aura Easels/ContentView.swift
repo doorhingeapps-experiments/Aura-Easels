@@ -12,12 +12,19 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     let canvas: Canvas
     @State private var selectedElement: CanvasElement? = nil
+    @State private var selectedElements: Set<String> = []
     @State private var editingText: String = ""
     @State private var isEditingText: Bool = false
     @State private var dragOffset: CGSize = .zero
+    @State private var groupDragOffset: CGSize = .zero
     @State private var isResizing: Bool = false
     @State private var resizeStartSize: CGSize? = nil
     @State private var resizeStartPosition: CGPoint? = nil
+    
+    // Box selection state
+    @State private var isBoxSelecting: Bool = false
+    @State private var boxSelectionStart: CGPoint = .zero
+    @State private var boxSelectionEnd: CGPoint = .zero
     
     
     private let minWidth:  CGFloat = 50
@@ -54,15 +61,34 @@ struct ContentView: View {
                                     .border(Color.gray, width: 1)
                                     .onTapGesture {
                                         selectedElement = nil
+                                        selectedElements.removeAll()
                                         isEditingText = false
                                     }
+                                    .gesture(
+                                        DragGesture()
+                                            .onChanged { value in
+                                                if !isBoxSelecting {
+                                                    isBoxSelecting = true
+                                                    boxSelectionStart = value.startLocation
+                                                    selectedElement = nil
+                                                    selectedElements.removeAll()
+                                                    isEditingText = false
+                                                }
+                                                boxSelectionEnd = value.location
+                                                updateBoxSelection()
+                                            }
+                                            .onEnded { _ in
+                                                isBoxSelecting = false
+                                            }
+                                    )
                                 
                                 ForEach(canvas.elements, id: \.id) { element in
                                     ElementView(
                                         element: element,
+                                        isSelected: selectedElements.contains(element.id) || selectedElement?.id == element.id,
                                         isEditingText: isEditingText && selectedElement?.id == element.id,
                                         editingText: $editingText,
-                                        dragOffset: selectedElement?.id == element.id ? dragOffset : .zero,
+                                        dragOffset: selectedElement?.id == element.id ? dragOffset : (selectedElements.contains(element.id) ? groupDragOffset : .zero),
                                         onSelect: {
                                             if selectedElement?.id == element.id {
                                                 if case .text(let current, let textStyle) = element.type {
@@ -81,7 +107,20 @@ struct ContentView: View {
                                                 }
                                             }
                                             else {
+                                                if selectedElements.count > 1 {
+                                                    // Clear multi-selection and select single element
+                                                    selectedElements.removeAll()
+                                                }
                                                 selectedElement = element
+                                                isEditingText = false
+                                            }
+                                        },
+                                        onMultiSelect: {
+                                            if selectedElements.contains(element.id) {
+                                                selectedElements.remove(element.id)
+                                            } else {
+                                                selectedElements.insert(element.id)
+                                                selectedElement = nil
                                                 isEditingText = false
                                             }
                                         },
@@ -99,6 +138,8 @@ struct ContentView: View {
                                                 dragOffset = snappedOffset
                                                 snapIndicatorLines = snapResult.lines
                                                 snappedPosition = snapResult.position
+                                            } else if selectedElements.contains(element.id) && !isResizing {
+                                                groupDragOffset = tr
                                             }
                                         },
                                         onDragEnded: { tr in
@@ -111,6 +152,9 @@ struct ContentView: View {
                                                 dragOffset = .zero
                                                 snapIndicatorLines = []
                                                 snappedPosition = nil
+                                            } else if selectedElements.contains(element.id) && !isResizing {
+                                                updateGroupPositions(by: tr)
+                                                groupDragOffset = .zero
                                             }
                                         },
                                         onTextSubmit: { newText in
@@ -152,6 +196,26 @@ struct ContentView: View {
                                     .zIndex(1000)
                                 }
                                 
+                                // Multi-selection overlays
+                                ForEach(Array(selectedElements), id: \.self) { elementId in
+                                    if let element = canvas.elements.first(where: { $0.id == elementId }) {
+                                        MultiSelectionOverlay(
+                                            element: element,
+                                            dragOffset: groupDragOffset
+                                        )
+                                        .zIndex(999)
+                                    }
+                                }
+                                
+                                // Box selection overlay
+                                if isBoxSelecting {
+                                    BoxSelectionOverlay(
+                                        start: boxSelectionStart,
+                                        end: boxSelectionEnd
+                                    )
+                                    .zIndex(1001)
+                                }
+                                
                                 // Snap indicator lines
                                 ForEach(snapIndicatorLines.indices, id: \.self) { index in
                                     let line = snapIndicatorLines[index]
@@ -182,8 +246,10 @@ struct ContentView: View {
                         Button("Add Line") { add(.line(45.0)) }
                         Button("Add Website") { add(.website("https://apple.com")) }
                         Spacer()
-                        if selectedElement != nil {
+                        if selectedElement != nil || !selectedElements.isEmpty {
                             Button("Delete Selected", role: .destructive) { deleteSelected() }
+//                                .keyboardShortcut(.delete)
+                                .keyboardShortcut(.delete, modifiers: [])
                         }
                     }
                     .padding(.horizontal)
@@ -374,12 +440,24 @@ struct ContentView: View {
     }
 
     private func deleteSelected() {
-        guard let sel = selectedElement else { return }
-        if let index = canvas.elements.firstIndex(where: { $0.id == sel.id }) {
-            canvas.elements.remove(at: index)
+        if !selectedElements.isEmpty {
+            // Delete multiple selected elements
+            let elementsToDelete = canvas.elements.filter { selectedElements.contains($0.id) }
+            for element in elementsToDelete {
+                if let index = canvas.elements.firstIndex(where: { $0.id == element.id }) {
+                    canvas.elements.remove(at: index)
+                }
+                modelContext.delete(element)
+            }
+            selectedElements.removeAll()
+        } else if let sel = selectedElement {
+            // Delete single selected element
+            if let index = canvas.elements.firstIndex(where: { $0.id == sel.id }) {
+                canvas.elements.remove(at: index)
+            }
+            modelContext.delete(sel)
+            selectedElement = nil
         }
-        modelContext.delete(sel)
-        selectedElement = nil
         try? modelContext.save()
     }
     
@@ -601,6 +679,40 @@ struct ContentView: View {
         
         return (snappedPosition, snapLines)
     }
+    
+    private func updateBoxSelection() {
+        let selectionRect = CGRect(
+            x: min(boxSelectionStart.x, boxSelectionEnd.x),
+            y: min(boxSelectionStart.y, boxSelectionEnd.y),
+            width: abs(boxSelectionEnd.x - boxSelectionStart.x),
+            height: abs(boxSelectionEnd.y - boxSelectionStart.y)
+        )
+        
+        selectedElements.removeAll()
+        
+        for element in canvas.elements {
+            let elementRect = CGRect(
+                x: element.position.x - element.size.width / 2,
+                y: element.position.y - element.size.height / 2,
+                width: element.size.width,
+                height: element.size.height
+            )
+            
+            if selectionRect.intersects(elementRect) {
+                selectedElements.insert(element.id)
+            }
+        }
+    }
+    
+    private func updateGroupPositions(by translation: CGSize) {
+        for elementId in selectedElements {
+            if let element = canvas.elements.first(where: { $0.id == elementId }) {
+                element.position.x += translation.width
+                element.position.y += translation.height
+            }
+        }
+        try? modelContext.save()
+    }
 }
 
 // MARK: – Snap Line
@@ -714,6 +826,54 @@ struct ResizeHandleView: View {
                     }
             )
             .zIndex(2)
+    }
+}
+
+// MARK: – Multi-Selection Overlay
+struct MultiSelectionOverlay: View {
+    let element: CanvasElement
+    let dragOffset: CGSize
+    
+    private var center: CGPoint {
+        .init(x: element.position.x + dragOffset.width,
+              y: element.position.y + dragOffset.height)
+    }
+    
+    var body: some View {
+        Rectangle()
+            .stroke(Color.orange, lineWidth: 2)
+            .frame(width: element.size.width, height: element.size.height)
+            .position(center)
+            .allowsHitTesting(false)
+    }
+}
+
+// MARK: – Box Selection Overlay
+struct BoxSelectionOverlay: View {
+    let start: CGPoint
+    let end: CGPoint
+    
+    private var selectionRect: CGRect {
+        CGRect(
+            x: min(start.x, end.x),
+            y: min(start.y, end.y),
+            width: abs(end.x - start.x),
+            height: abs(end.y - start.y)
+        )
+    }
+    
+    var body: some View {
+        Rectangle()
+            .fill(Color.blue.opacity(0.2))
+            .frame(width: selectionRect.width, height: selectionRect.height)
+            .position(x: selectionRect.midX, y: selectionRect.midY)
+            .overlay(
+                Rectangle()
+                    .stroke(Color.blue, lineWidth: 1)
+                    .frame(width: selectionRect.width, height: selectionRect.height)
+                    .position(x: selectionRect.midX, y: selectionRect.midY)
+            )
+            .allowsHitTesting(false)
     }
 }
 
