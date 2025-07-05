@@ -65,12 +65,14 @@ struct ContentView: View {
                                         isEditingText = false
                                     }
                                     .gesture(
-                                        DragGesture()
+                                        DragGesture(minimumDistance: 10)
                                             .onChanged { value in
+                                                // Only allow box selection if no single item is selected with resize handles
+                                                guard selectedElement == nil else { return }
+                                                
                                                 if !isBoxSelecting {
                                                     isBoxSelecting = true
                                                     boxSelectionStart = value.startLocation
-                                                    selectedElement = nil
                                                     selectedElements.removeAll()
                                                     isEditingText = false
                                                 }
@@ -79,6 +81,14 @@ struct ContentView: View {
                                             }
                                             .onEnded { _ in
                                                 isBoxSelecting = false
+                                                // Auto-switch to single selection mode if only one item is selected
+                                                if selectedElements.count == 1 {
+                                                    if let elementId = selectedElements.first,
+                                                       let element = canvas.elements.first(where: { $0.id == elementId }) {
+                                                        selectedElement = element
+                                                        selectedElements.removeAll()
+                                                    }
+                                                }
                                             }
                                     )
                                 
@@ -90,6 +100,11 @@ struct ContentView: View {
                                         editingText: $editingText,
                                         dragOffset: selectedElement?.id == element.id ? dragOffset : (selectedElements.contains(element.id) ? groupDragOffset : .zero),
                                         onSelect: {
+                                            // Cancel any ongoing box selection
+                                            if isBoxSelecting {
+                                                isBoxSelecting = false
+                                            }
+                                            
                                             if selectedElement?.id == element.id {
                                                 if case .text(let current, let textStyle) = element.type {
                                                     editingText = current
@@ -107,24 +122,36 @@ struct ContentView: View {
                                                 }
                                             }
                                             else {
-                                                if selectedElements.count > 1 {
-                                                    // Clear multi-selection and select single element
-                                                    selectedElements.removeAll()
-                                                }
+                                                // Clear multi-selection and switch to single selection mode
+                                                selectedElements.removeAll()
                                                 selectedElement = element
                                                 isEditingText = false
                                             }
                                         },
                                         onMultiSelect: {
+                                            // Only allow multi-select if not in single-selection resize mode
+                                            if selectedElement != nil {
+                                                // Switch from single to multi-selection
+                                                if let currentSelected = selectedElement {
+                                                    selectedElements.insert(currentSelected.id)
+                                                }
+                                                selectedElement = nil
+                                                isEditingText = false
+                                            }
+                                            
                                             if selectedElements.contains(element.id) {
                                                 selectedElements.remove(element.id)
                                             } else {
                                                 selectedElements.insert(element.id)
-                                                selectedElement = nil
-                                                isEditingText = false
                                             }
                                         },
                                         onDragChanged: { tr in
+                                            // Prioritize drag-to-move over box selection
+                                            // Cancel any ongoing box selection when dragging an element
+                                            if isBoxSelecting {
+                                                isBoxSelecting = false
+                                            }
+                                            
                                             if selectedElement?.id == element.id && !isResizing {
                                                 let canvasSize = CGSize(width: geo.size.width, height: canvasH)
                                                 let snapResult = calculateSnap(for: element, with: tr, canvasSize: canvasSize)

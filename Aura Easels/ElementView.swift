@@ -127,6 +127,9 @@ struct ElementView: View {
                         .modifier(TextStyleModifier(fontDesign: style.fontDesign, fontSize: style.fontSize, fontWeight: style.fontweight, alignment: style.alignment, verticalAlignment: ""))
                         .foregroundColor(element.color)
                         .frame(width: element.size.width, height: element.size.height, alignment: frameAlignment(for: style.alignment))
+                        .background(content: {
+                            Color.white.opacity(0.001)
+                        })
                         .contextMenu {
                             contextMenuItems
                         }
@@ -260,7 +263,7 @@ struct ElementView: View {
 
 
     private var drag: some Gesture {
-        DragGesture()
+        DragGesture(minimumDistance: 2)
             .onChanged { value in onDragChanged(value.translation) }
             .onEnded   { value in onDragEnded(value.translation) }
     }
