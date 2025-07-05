@@ -9,12 +9,21 @@
 
 
 import SwiftUI
+import SwiftData
 
-struct TextStyleOptions: Equatable {
+@Model
+class TextStyleOptions {
     var fontDesign: String
-    var fontSize: CGFloat
+    var fontSize: Double
     var fontweight: String
     var alignment: String
+    
+    init(fontDesign: String, fontSize: Double, fontweight: String, alignment: String) {
+        self.fontDesign = fontDesign
+        self.fontSize = fontSize
+        self.fontweight = fontweight
+        self.alignment = alignment
+    }
 }
 
 enum FontWeight {

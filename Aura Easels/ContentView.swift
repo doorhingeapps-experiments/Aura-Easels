@@ -3,22 +3,21 @@
 //  Re-written 7/2/25
 
 import SwiftUI
+import SwiftData
 import WebKit
 
 
 // MARK: – Main View
 struct ContentView: View {
-    @State private var elements: [CanvasElement] = [
-        .init(type: .text("Hello World", TextStyleOptions(fontDesign: "regular", fontSize: 20, fontweight: "bold", alignment: "center")), position: .init(x: 150, y: 100), size: .init(width: 120, height: 40), color: .black),
-        .init(type: .rectangle, position: .init(x: 200, y: 200), size: .init(width: 100, height: 100), color: .blue),
-        .init(type: .oval, position: .init(x: 100, y: 300), size: .init(width: 100, height: 100), color: .blue)
-    ]
+    @Environment(\.modelContext) private var modelContext
+    let canvas: Canvas
     @State private var selectedElement: CanvasElement? = nil
     @State private var editingText: String = ""
     @State private var isEditingText: Bool = false
     @State private var dragOffset: CGSize = .zero
     @State private var isResizing: Bool = false
-    @State private var resizeStart: CanvasElement? = nil
+    @State private var resizeStartSize: CGSize? = nil
+    @State private var resizeStartPosition: CGPoint? = nil
     
     
     private let minWidth:  CGFloat = 50
@@ -45,7 +44,7 @@ struct ContentView: View {
                     
                     GeometryReader { geo in
                         let screenH = geo.size.height
-                        let lastBottom = elements.map { $0.position.y + $0.size.height/2 }.max() ?? 0
+                        let lastBottom = canvas.elements.map { $0.position.y + $0.size.height/2 }.max() ?? 0
                         let canvasH = max(screenH, lastBottom + screenH)
                         
                         ScrollView(.vertical) {
@@ -58,7 +57,7 @@ struct ContentView: View {
                                         isEditingText = false
                                     }
                                 
-                                ForEach(elements) { element in
+                                ForEach(canvas.elements, id: \.id) { element in
                                     ElementView(
                                         element: element,
                                         isEditingText: isEditingText && selectedElement?.id == element.id,
@@ -146,7 +145,8 @@ struct ContentView: View {
                                         },
                                         onResizeEnded: {
                                             isResizing = false
-                                            resizeStart = nil
+                                            resizeStartSize = nil
+                                            resizeStartPosition = nil
                                         }
                                     )
                                     .zIndex(1000)
@@ -172,7 +172,11 @@ struct ContentView: View {
                     .padding()
                     
                     HStack {
-                        Button("Add Text") { add(.text("New Text", TextStyleOptions(fontDesign: "regular", fontSize: 20, fontweight: "bold", alignment: "center"))) }
+                        Button("Add Text") { 
+                            let textStyle = TextStyleOptions(fontDesign: "regular", fontSize: 20, fontweight: "bold", alignment: "center")
+                            modelContext.insert(textStyle)
+                            add(.text("New Text", textStyle))
+                        }
                         Button("Add Rectangle") { add(.rectangle) }
                         Button("Add Oval") { add(.oval) }
                         Button("Add Line") { add(.line(45.0)) }
@@ -243,76 +247,83 @@ struct ContentView: View {
 
     // MARK: – Helpers
     private func updatePosition(of element: CanvasElement, by tr: CGSize) {
-        guard let idx = elements.firstIndex(where: { $0.id == element.id }) else { return }
-        elements[idx].position.x += tr.width
-        elements[idx].position.y += tr.height
-        selectedElement = elements[idx]
+        element.position.x += tr.width
+        element.position.y += tr.height
+        selectedElement = element
+        try? modelContext.save()
     }
     
     private func updatePositionAbsolute(of element: CanvasElement, to position: CGPoint) {
-        guard let idx = elements.firstIndex(where: { $0.id == element.id }) else { return }
-        elements[idx].position = position
-        selectedElement = elements[idx]
+        element.position = position
+        selectedElement = element
+        try? modelContext.save()
     }
 
     private func updateText(of element: CanvasElement, to text: String) {
-        guard let idx = elements.firstIndex(where: { $0.id == element.id }) else { return }
         if case .text(_, let currentStyle) = element.type {
-            elements[idx].type = .text(text, currentStyle)
+            element.type = .text(text, currentStyle)
         } else {
-            elements[idx].type = .text(text, TextStyleOptions(fontDesign: "regular", fontSize: 20, fontweight: "bold", alignment: "center"))
+            let newStyle = TextStyleOptions(fontDesign: "regular", fontSize: 20, fontweight: "bold", alignment: "center")
+            modelContext.insert(newStyle)
+            element.type = .text(text, newStyle)
         }
-        selectedElement = elements[idx]
+        selectedElement = element
+        try? modelContext.save()
     }
     
     private func updateTextStyle(of element: CanvasElement, to style: TextStyleOptions) {
-        guard let idx = elements.firstIndex(where: { $0.id == element.id }) else { return }
         if case .text(let currentText, _) = element.type {
-            elements[idx].type = .text(currentText, style)
-            selectedElement = elements[idx]
+            modelContext.insert(style)
+            element.type = .text(currentText, style)
+            selectedElement = element
+            try? modelContext.save()
         }
     }
 
     private func resizeElement(_ element: CanvasElement, handle: ResizeHandle, translation tr: CGSize) {
-        if resizeStart?.id != element.id { resizeStart = element }
-        guard let start = resizeStart,
-              let idx   = elements.firstIndex(where: { $0.id == element.id }) else { return }
+        if resizeStartSize == nil || resizeStartPosition == nil {
+            resizeStartSize = element.size
+            resizeStartPosition = element.position
+        }
+        guard let startSize = resizeStartSize,
+              let startPosition = resizeStartPosition,
+              let idx = canvas.elements.firstIndex(where: { $0.id == element.id }) else { return }
 
         // compute new size within your four limits
-        var newSize = start.size
+        var newSize = startSize
         func clamp(_ v: CGFloat, min: CGFloat, max: CGFloat) -> CGFloat {
             Swift.min(max, Swift.max(min, v))
         }
 
         switch handle {
         case .topLeft:
-            newSize.width  = clamp(start.size.width  - tr.width,  min: minWidth, max: maxWidth)
-            newSize.height = clamp(start.size.height - tr.height, min: minHeight, max: maxHeight)
+            newSize.width  = clamp(startSize.width  - tr.width,  min: minWidth, max: maxWidth)
+            newSize.height = clamp(startSize.height - tr.height, min: minHeight, max: maxHeight)
         case .topRight:
-            newSize.width  = clamp(start.size.width  + tr.width,  min: minWidth, max: maxWidth)
-            newSize.height = clamp(start.size.height - tr.height, min: minHeight, max: maxHeight)
+            newSize.width  = clamp(startSize.width  + tr.width,  min: minWidth, max: maxWidth)
+            newSize.height = clamp(startSize.height - tr.height, min: minHeight, max: maxHeight)
         case .bottomLeft:
-            newSize.width  = clamp(start.size.width  - tr.width,  min: minWidth, max: maxWidth)
-            newSize.height = clamp(start.size.height + tr.height, min: minHeight, max: maxHeight)
+            newSize.width  = clamp(startSize.width  - tr.width,  min: minWidth, max: maxWidth)
+            newSize.height = clamp(startSize.height + tr.height, min: minHeight, max: maxHeight)
         case .bottomRight:
-            newSize.width  = clamp(start.size.width  + tr.width,  min: minWidth, max: maxWidth)
-            newSize.height = clamp(start.size.height + tr.height, min: minHeight, max: maxHeight)
+            newSize.width  = clamp(startSize.width  + tr.width,  min: minWidth, max: maxWidth)
+            newSize.height = clamp(startSize.height + tr.height, min: minHeight, max: maxHeight)
         case .top:
-            newSize.height = clamp(start.size.height - tr.height, min: minHeight, max: maxHeight)
+            newSize.height = clamp(startSize.height - tr.height, min: minHeight, max: maxHeight)
         case .bottom:
-            newSize.height = clamp(start.size.height + tr.height, min: minHeight, max: maxHeight)
+            newSize.height = clamp(startSize.height + tr.height, min: minHeight, max: maxHeight)
         case .left:
-            newSize.width  = clamp(start.size.width  - tr.width,  min: minWidth, max: maxWidth)
+            newSize.width  = clamp(startSize.width  - tr.width,  min: minWidth, max: maxWidth)
         case .right:
-            newSize.width  = clamp(start.size.width  + tr.width,  min: minWidth, max: maxWidth)
+            newSize.width  = clamp(startSize.width  + tr.width,  min: minWidth, max: maxWidth)
         }
 
         // figure out how much we actually resized
-        let deltaW = newSize.width  - start.size.width
-        let deltaH = newSize.height - start.size.height
+        let deltaW = newSize.width  - startSize.width
+        let deltaH = newSize.height - startSize.height
 
         // reposition by half the *actual* delta in the correct direction
-        var newPos = start.position
+        var newPos = startPosition
         switch handle {
         case .topLeft:
             newPos.x += -deltaW/2
@@ -336,9 +347,10 @@ struct ContentView: View {
             newPos.x +=  deltaW/2
         }
 
-        elements[idx].size     = newSize
-        elements[idx].position = newPos
-        selectedElement        = elements[idx]
+        canvas.elements[idx].size     = newSize
+        canvas.elements[idx].position = newPos
+        selectedElement               = canvas.elements[idx]
+        try? modelContext.save()
     }
 
 
@@ -346,8 +358,10 @@ struct ContentView: View {
     private func add(_ type: ElementType) {
         let defaultColor = getDefaultColor(for: type)
         let newElem = CanvasElement(type: type, position: .init(x: 200, y: 200), size: .init(width: 200, height: 200), color: defaultColor)
-        elements.append(newElem)
+        canvas.elements.append(newElem)
+        modelContext.insert(newElem)
         selectedElement = newElem
+        try? modelContext.save()
     }
     
     private func getDefaultColor(for type: ElementType) -> Color {
@@ -361,49 +375,60 @@ struct ContentView: View {
 
     private func deleteSelected() {
         guard let sel = selectedElement else { return }
-        elements.removeAll { $0.id == sel.id }
+        if let index = canvas.elements.firstIndex(where: { $0.id == sel.id }) {
+            canvas.elements.remove(at: index)
+        }
+        modelContext.delete(sel)
         selectedElement = nil
+        try? modelContext.save()
     }
     
     private func deleteElement(_ element: CanvasElement) {
-        elements.removeAll { $0.id == element.id }
+        if let index = canvas.elements.firstIndex(where: { $0.id == element.id }) {
+            canvas.elements.remove(at: index)
+        }
+        modelContext.delete(element)
         if selectedElement?.id == element.id {
             selectedElement = nil
         }
+        try? modelContext.save()
     }
     
     private func updateColor(of element: CanvasElement, to color: Color) {
-        guard let idx = elements.firstIndex(where: { $0.id == element.id }) else { return }
-        elements[idx].color = color
-        selectedElement = elements[idx]
+        element.color = color
+        selectedElement = element
+        try? modelContext.save()
     }
     
     private func moveToTop(element: CanvasElement) {
-        guard let idx = elements.firstIndex(where: { $0.id == element.id }) else { return }
-        let movedElement = elements.remove(at: idx)
-        elements.append(movedElement)
+        guard let idx = canvas.elements.firstIndex(where: { $0.id == element.id }) else { return }
+        let movedElement = canvas.elements.remove(at: idx)
+        canvas.elements.append(movedElement)
         selectedElement = movedElement
+        try? modelContext.save()
     }
     
     private func moveToBottom(element: CanvasElement) {
-        guard let idx = elements.firstIndex(where: { $0.id == element.id }) else { return }
-        let movedElement = elements.remove(at: idx)
-        elements.insert(movedElement, at: 0)
+        guard let idx = canvas.elements.firstIndex(where: { $0.id == element.id }) else { return }
+        let movedElement = canvas.elements.remove(at: idx)
+        canvas.elements.insert(movedElement, at: 0)
         selectedElement = movedElement
+        try? modelContext.save()
     }
     
     private func updateWebsiteURL() {
-        guard let currentElement = currentWebsiteElement,
-              let idx = elements.firstIndex(where: { $0.id == currentElement.id }) else { return }
+        guard let currentElement = currentWebsiteElement else { return }
         
-        elements[idx].type = .website(editingURL)
-        selectedElement = elements[idx]
+        currentElement.type = .website(editingURL)
+        selectedElement = currentElement
         
         // Update the webview with the new URL
         if let url = URL(string: editingURL) {
             let request = URLRequest(url: url)
             popoverWebview?.load(request)
         }
+        
+        try? modelContext.save()
     }
     
     private func calculateSnap(for element: CanvasElement, with dragOffset: CGSize, canvasSize: CGSize) -> (position: CGPoint, lines: [SnapLine]) {
@@ -414,9 +439,11 @@ struct ContentView: View {
         )
         let elementLeftEdge = currentCenter.x - element.size.width / 2
         let elementRightEdge = currentCenter.x + element.size.width / 2
+        let elementTopEdge = currentCenter.y - element.size.height / 2
         let canvasCenterX = canvasSize.width / 2
         let canvasLeft: CGFloat = 0
         let canvasRight = canvasSize.width
+        let canvasTop: CGFloat = 0
         
         var snappedPosition = currentCenter
         var snapLines: [SnapLine] = []
@@ -449,6 +476,16 @@ struct ContentView: View {
             ))
         }
         
+        // Top edge snap (element top to canvas top)
+        if abs(elementTopEdge - canvasTop) < snapThreshold {
+            snappedPosition.y = canvasTop + element.size.height / 2
+            snapLines.append(SnapLine(
+                start: CGPoint(x: 0, y: canvasTop),
+                end: CGPoint(x: canvasSize.width, y: canvasTop),
+                type: .topEdge
+            ))
+        }
+        
         return (snappedPosition, snapLines)
     }
 }
@@ -464,6 +501,7 @@ enum SnapType {
     case centerVertical
     case leftEdge
     case rightEdge
+    case topEdge
 }
 
 // MARK: – Selection Overlay

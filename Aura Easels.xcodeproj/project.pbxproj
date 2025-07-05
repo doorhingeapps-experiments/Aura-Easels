@@ -15,6 +15,7 @@
 		B9C43F032E18ED1400010E99 /* Canvas Elements.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9C43F022E18ED1400010E99 /* Canvas Elements.swift */; };
 		B9C43F052E18ED6C00010E99 /* ElementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9C43F042E18ED6C00010E99 /* ElementView.swift */; };
 		B9C43F072E19054600010E99 /* hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9C43F062E19054600010E99 /* hex.swift */; };
+		B9C43F092E19200200010E99 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9C43F082E19200200010E99 /* MainView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -26,6 +27,7 @@
 		B9C43F022E18ED1400010E99 /* Canvas Elements.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Canvas Elements.swift"; sourceTree = "<group>"; };
 		B9C43F042E18ED6C00010E99 /* ElementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElementView.swift; sourceTree = "<group>"; };
 		B9C43F062E19054600010E99 /* hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = hex.swift; sourceTree = "<group>"; };
+		B9C43F082E19200200010E99 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		B9EE89272E147BA200AB6ACE /* Aura Easels.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Aura Easels.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -44,6 +46,7 @@
 			isa = PBXGroup;
 			children = (
 				B9C43EF72E18E5CA00010E99 /* Aura_EaselsApp.swift */,
+				B9C43F082E19200200010E99 /* MainView.swift */,
 				B9C43EF82E18E5CA00010E99 /* ContentView.swift */,
 				B9C43F042E18ED6C00010E99 /* ElementView.swift */,
 				B9C43EF92E18E5CA00010E99 /* LinkPresentation.swift */,
@@ -152,6 +155,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B9C43EFB2E18E5CA00010E99 /* Aura_EaselsApp.swift in Sources */,
+				B9C43F092E19200200010E99 /* MainView.swift in Sources */,
 				B9C43F072E19054600010E99 /* hex.swift in Sources */,
 				B9C43F052E18ED6C00010E99 /* ElementView.swift in Sources */,
 				B9C43F032E18ED1400010E99 /* Canvas Elements.swift in Sources */,
