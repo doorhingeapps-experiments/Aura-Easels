@@ -6,17 +6,26 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		B9C43EFB2E18E5CA00010E99 /* Aura_EaselsApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9C43EF72E18E5CA00010E99 /* Aura_EaselsApp.swift */; };
+		B9C43EFC2E18E5CA00010E99 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9C43EF82E18E5CA00010E99 /* ContentView.swift */; };
+		B9C43EFD2E18E5CA00010E99 /* LinkPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9C43EF92E18E5CA00010E99 /* LinkPresentation.swift */; };
+		B9C43EFE2E18E5CA00010E99 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B9C43EF62E18E5CA00010E99 /* Assets.xcassets */; };
+		B9C43F012E18E5E400010E99 /* TextStyleOptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9C43F002E18E5E400010E99 /* TextStyleOptions.swift */; };
+		B9C43F032E18ED1400010E99 /* Canvas Elements.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9C43F022E18ED1400010E99 /* Canvas Elements.swift */; };
+		B9C43F052E18ED6C00010E99 /* ElementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9C43F042E18ED6C00010E99 /* ElementView.swift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
+		B9C43EF62E18E5CA00010E99 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B9C43EF72E18E5CA00010E99 /* Aura_EaselsApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Aura_EaselsApp.swift; sourceTree = "<group>"; };
+		B9C43EF82E18E5CA00010E99 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		B9C43EF92E18E5CA00010E99 /* LinkPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkPresentation.swift; sourceTree = "<group>"; };
+		B9C43F002E18E5E400010E99 /* TextStyleOptions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextStyleOptions.swift; sourceTree = "<group>"; };
+		B9C43F022E18ED1400010E99 /* Canvas Elements.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Canvas Elements.swift"; sourceTree = "<group>"; };
+		B9C43F042E18ED6C00010E99 /* ElementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElementView.swift; sourceTree = "<group>"; };
 		B9EE89272E147BA200AB6ACE /* Aura Easels.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Aura Easels.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
-
-/* Begin PBXFileSystemSynchronizedRootGroup section */
-		B9EE89292E147BA200AB6ACE /* Aura Easels */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "Aura Easels";
-			sourceTree = "<group>";
-		};
-/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		B9EE89242E147BA200AB6ACE /* Frameworks */ = {
@@ -29,10 +38,32 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		B9C43EFA2E18E5CA00010E99 /* Aura Easels */ = {
+			isa = PBXGroup;
+			children = (
+				B9C43EF72E18E5CA00010E99 /* Aura_EaselsApp.swift */,
+				B9C43EF82E18E5CA00010E99 /* ContentView.swift */,
+				B9C43F042E18ED6C00010E99 /* ElementView.swift */,
+				B9C43EF92E18E5CA00010E99 /* LinkPresentation.swift */,
+				B9C43EFF2E18E5CD00010E99 /* Object Types */,
+				B9C43EF62E18E5CA00010E99 /* Assets.xcassets */,
+			);
+			path = "Aura Easels";
+			sourceTree = "<group>";
+		};
+		B9C43EFF2E18E5CD00010E99 /* Object Types */ = {
+			isa = PBXGroup;
+			children = (
+				B9C43F002E18E5E400010E99 /* TextStyleOptions.swift */,
+				B9C43F022E18ED1400010E99 /* Canvas Elements.swift */,
+			);
+			path = "Object Types";
+			sourceTree = "<group>";
+		};
 		B9EE891E2E147BA200AB6ACE = {
 			isa = PBXGroup;
 			children = (
-				B9EE89292E147BA200AB6ACE /* Aura Easels */,
+				B9C43EFA2E18E5CA00010E99 /* Aura Easels */,
 				B9EE89282E147BA200AB6ACE /* Products */,
 			);
 			sourceTree = "<group>";
@@ -59,9 +90,6 @@
 			buildRules = (
 			);
 			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				B9EE89292E147BA200AB6ACE /* Aura Easels */,
 			);
 			name = "Aura Easels";
 			packageProductDependencies = (
@@ -109,6 +137,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B9C43EFE2E18E5CA00010E99 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -119,6 +148,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B9C43EFB2E18E5CA00010E99 /* Aura_EaselsApp.swift in Sources */,
+				B9C43F052E18ED6C00010E99 /* ElementView.swift in Sources */,
+				B9C43F032E18ED1400010E99 /* Canvas Elements.swift in Sources */,
+				B9C43EFC2E18E5CA00010E99 /* ContentView.swift in Sources */,
+				B9C43EFD2E18E5CA00010E99 /* LinkPresentation.swift in Sources */,
+				B9C43F012E18E5E400010E99 /* TextStyleOptions.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
