@@ -159,7 +159,7 @@ struct ContentView: View {
                                         path.move(to: line.start)
                                         path.addLine(to: line.end)
                                     }
-                                    .stroke(Color.black, lineWidth: 1)
+                                    .stroke(Color(.systemBlue), lineWidth: 1)
                                     .allowsHitTesting(false)
                                 }
                                 .zIndex(999)
@@ -402,16 +402,20 @@ struct ContentView: View {
     
     private func moveToTop(element: CanvasElement) {
         guard let idx = canvas.elements.firstIndex(where: { $0.id == element.id }) else { return }
-        let movedElement = canvas.elements.remove(at: idx)
-        canvas.elements.append(movedElement)
+        var newElements = canvas.elements
+        let movedElement = newElements.remove(at: idx)
+        newElements.append(movedElement)
+        canvas.elements = newElements
         selectedElement = movedElement
         try? modelContext.save()
     }
     
     private func moveToBottom(element: CanvasElement) {
         guard let idx = canvas.elements.firstIndex(where: { $0.id == element.id }) else { return }
-        let movedElement = canvas.elements.remove(at: idx)
-        canvas.elements.insert(movedElement, at: 0)
+        var newElements = canvas.elements
+        let movedElement = newElements.remove(at: idx)
+        newElements.insert(movedElement, at: 0)
+        canvas.elements = newElements
         selectedElement = movedElement
         try? modelContext.save()
     }
@@ -486,6 +490,115 @@ struct ContentView: View {
             ))
         }
         
+        // Element-to-element snapping (smaller threshold)
+        let elementSnapThreshold: CGFloat = snapThreshold / 2 // 10 instead of 20
+        let elementBottomEdge = currentCenter.y + element.size.height / 2
+        
+        for otherElement in canvas.elements {
+            // Skip self
+            if otherElement.id == element.id { continue }
+            
+            let otherCenter = otherElement.position
+            let otherLeft = otherCenter.x - otherElement.size.width / 2
+            let otherRight = otherCenter.x + otherElement.size.width / 2
+            let otherTop = otherCenter.y - otherElement.size.height / 2
+            let otherBottom = otherCenter.y + otherElement.size.height / 2
+            
+            // Horizontal snapping (vertical lines)
+            // Center to center
+            if abs(currentCenter.x - otherCenter.x) < elementSnapThreshold {
+                snappedPosition.x = otherCenter.x
+                snapLines.append(SnapLine(
+                    start: CGPoint(x: otherCenter.x, y: min(currentCenter.y, otherCenter.y) - 50),
+                    end: CGPoint(x: otherCenter.x, y: max(currentCenter.y, otherCenter.y) + 50),
+                    type: .elementCenterVertical
+                ))
+            }
+            // Left edge to left edge
+            else if abs(elementLeftEdge - otherLeft) < elementSnapThreshold {
+                snappedPosition.x = otherLeft + element.size.width / 2
+                snapLines.append(SnapLine(
+                    start: CGPoint(x: otherLeft, y: min(currentCenter.y, otherCenter.y) - 50),
+                    end: CGPoint(x: otherLeft, y: max(currentCenter.y, otherCenter.y) + 50),
+                    type: .elementLeftEdge
+                ))
+            }
+            // Right edge to right edge
+            else if abs(elementRightEdge - otherRight) < elementSnapThreshold {
+                snappedPosition.x = otherRight - element.size.width / 2
+                snapLines.append(SnapLine(
+                    start: CGPoint(x: otherRight, y: min(currentCenter.y, otherCenter.y) - 50),
+                    end: CGPoint(x: otherRight, y: max(currentCenter.y, otherCenter.y) + 50),
+                    type: .elementRightEdge
+                ))
+            }
+            // Left edge to right edge
+            else if abs(elementLeftEdge - otherRight) < elementSnapThreshold {
+                snappedPosition.x = otherRight + element.size.width / 2
+                snapLines.append(SnapLine(
+                    start: CGPoint(x: otherRight, y: min(currentCenter.y, otherCenter.y) - 50),
+                    end: CGPoint(x: otherRight, y: max(currentCenter.y, otherCenter.y) + 50),
+                    type: .elementRightEdge
+                ))
+            }
+            // Right edge to left edge
+            else if abs(elementRightEdge - otherLeft) < elementSnapThreshold {
+                snappedPosition.x = otherLeft - element.size.width / 2
+                snapLines.append(SnapLine(
+                    start: CGPoint(x: otherLeft, y: min(currentCenter.y, otherCenter.y) - 50),
+                    end: CGPoint(x: otherLeft, y: max(currentCenter.y, otherCenter.y) + 50),
+                    type: .elementLeftEdge
+                ))
+            }
+            
+            // Vertical snapping (horizontal lines)
+            // Center to center
+            if abs(currentCenter.y - otherCenter.y) < elementSnapThreshold {
+                snappedPosition.y = otherCenter.y
+                snapLines.append(SnapLine(
+                    start: CGPoint(x: min(currentCenter.x, otherCenter.x) - 50, y: otherCenter.y),
+                    end: CGPoint(x: max(currentCenter.x, otherCenter.x) + 50, y: otherCenter.y),
+                    type: .elementCenterHorizontal
+                ))
+            }
+            // Top edge to top edge
+            else if abs(elementTopEdge - otherTop) < elementSnapThreshold {
+                snappedPosition.y = otherTop + element.size.height / 2
+                snapLines.append(SnapLine(
+                    start: CGPoint(x: min(currentCenter.x, otherCenter.x) - 50, y: otherTop),
+                    end: CGPoint(x: max(currentCenter.x, otherCenter.x) + 50, y: otherTop),
+                    type: .elementTopEdge
+                ))
+            }
+            // Bottom edge to bottom edge
+            else if abs(elementBottomEdge - otherBottom) < elementSnapThreshold {
+                snappedPosition.y = otherBottom - element.size.height / 2
+                snapLines.append(SnapLine(
+                    start: CGPoint(x: min(currentCenter.x, otherCenter.x) - 50, y: otherBottom),
+                    end: CGPoint(x: max(currentCenter.x, otherCenter.x) + 50, y: otherBottom),
+                    type: .elementBottomEdge
+                ))
+            }
+            // Top edge to bottom edge
+            else if abs(elementTopEdge - otherBottom) < elementSnapThreshold {
+                snappedPosition.y = otherBottom + element.size.height / 2
+                snapLines.append(SnapLine(
+                    start: CGPoint(x: min(currentCenter.x, otherCenter.x) - 50, y: otherBottom),
+                    end: CGPoint(x: max(currentCenter.x, otherCenter.x) + 50, y: otherBottom),
+                    type: .elementBottomEdge
+                ))
+            }
+            // Bottom edge to top edge
+            else if abs(elementBottomEdge - otherTop) < elementSnapThreshold {
+                snappedPosition.y = otherTop - element.size.height / 2
+                snapLines.append(SnapLine(
+                    start: CGPoint(x: min(currentCenter.x, otherCenter.x) - 50, y: otherTop),
+                    end: CGPoint(x: max(currentCenter.x, otherCenter.x) + 50, y: otherTop),
+                    type: .elementTopEdge
+                ))
+            }
+        }
+        
         return (snappedPosition, snapLines)
     }
 }
@@ -502,6 +615,12 @@ enum SnapType {
     case leftEdge
     case rightEdge
     case topEdge
+    case elementCenterVertical
+    case elementCenterHorizontal
+    case elementLeftEdge
+    case elementRightEdge
+    case elementTopEdge
+    case elementBottomEdge
 }
 
 // MARK: – Selection Overlay

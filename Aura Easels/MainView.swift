@@ -30,7 +30,7 @@ struct MainView: View {
                 }
                 .padding()
                 
-                List(canvases, id: \.id, selection: $selectedCanvas) { canvas in
+                List(canvases, id: \.id) { canvas in
                     VStack(alignment: .leading) {
                         Text(canvas.name)
                             .font(.body)
@@ -39,6 +39,10 @@ struct MainView: View {
                             .foregroundColor(.secondary)
                     }
                     .padding(.vertical, 2)
+                    .background(selectedCanvas?.id == canvas.id ? Color.accentColor.opacity(0.2) : Color.clear)
+                    .onTapGesture {
+                        selectedCanvas = canvas
+                    }
                     .contextMenu {
                         Button("Rename") {
                             // TODO: Add rename functionality
