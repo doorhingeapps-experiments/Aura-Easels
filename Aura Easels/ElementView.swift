@@ -21,6 +21,9 @@ struct ElementView: View {
     let onDragChanged: (CGSize) -> Void
     let onDragEnded: (CGSize) -> Void
     let onTextSubmit: (String) -> Void
+    let onColorChange: (Color) -> Void
+    let onMoveToTop: () -> Void
+    let onMoveToBottom: () -> Void
     
     @State var webPage = WebPage()
     @State var finishedLoading = false
@@ -40,12 +43,12 @@ struct ElementView: View {
                     .position(element.position)
                 } else {
                     Text(str)
-//                        .font(.system(size: 16))
                         .modifier(TextStyleModifier(fontDesign: style.fontDesign, fontSize: style.fontSize, fontWeight: style.fontweight, alignment: style.alignment, verticalAlignment: ""))
                         .foregroundColor(element.color)
-//                        .multilineTextAlignment(.leading)
-                        .frame(width: element.size.width, height: element.size.height, alignment: .topLeading)
-                        //.background(Color.white.opacity(0.8))
+                        .frame(width: element.size.width, height: element.size.height, alignment: frameAlignment(for: style.alignment))
+                        .contextMenu {
+                            contextMenuItems
+                        }
                         .position(element.position)
                         .offset(dragOffset)
                         .onTapGesture { onSelect() }
@@ -56,6 +59,9 @@ struct ElementView: View {
                 Rectangle()
                     .fill(element.color)
                     .frame(width: element.size.width, height: element.size.height)
+                    .contextMenu {
+                        contextMenuItems
+                    }
                     .position(element.position)
                     .offset(dragOffset)
                     .onTapGesture { onSelect() }
@@ -65,6 +71,9 @@ struct ElementView: View {
                 Ellipse()
                     .fill(element.color)
                     .frame(width: element.size.width, height: element.size.height)
+                    .contextMenu {
+                        contextMenuItems
+                    }
                     .position(element.position)
                     .offset(dragOffset)
                     .onTapGesture { onSelect() }
@@ -73,6 +82,9 @@ struct ElementView: View {
                 RoundedRectangle(cornerRadius: 10)
                     .fill(element.color)
                     .frame(width: element.size.width, height: 2)
+                    .contextMenu {
+                        contextMenuItems
+                    }
                     .position(element.position)
                     .offset(dragOffset)
                     .onTapGesture { onSelect() }
@@ -112,7 +124,8 @@ struct ElementView: View {
                             previewURL: linkURL,
                             measuredSize: $linkPreviewSize
                         )
-                        .shadow(color: Color.black.opacity(0.25), radius: 5, x: 0, y: 0)
+                        .id(url) // Force recreation when URL changes
+                        .shadow(color: element.color.opacity(0.5), radius: 10, x: 0, y: 0)
                         .scaleEffect(scale, anchor: .center)
                         .frame(
                             width: geo.size.width,
@@ -123,6 +136,9 @@ struct ElementView: View {
                         width: element.size.width,
                         height: element.size.height
                     )
+                    .contextMenu {
+                        contextMenuItems
+                    }
                     .position(element.position)
                     .offset(dragOffset)
                     .onTapGesture { onSelect() }
@@ -161,5 +177,102 @@ struct ElementView: View {
         DragGesture()
             .onChanged { value in onDragChanged(value.translation) }
             .onEnded   { value in onDragEnded(value.translation) }
+    }
+    
+    private func frameAlignment(for alignment: String) -> Alignment {
+        switch alignment {
+        case "center":
+            return .center
+        case "trailing":
+            return .topTrailing
+        default:
+            return .topLeading
+        }
+    }
+    
+    @ViewBuilder
+    private var contextMenuItems: some View {
+        Menu("Change Color") {
+            Button {
+                onColorChange(.black)
+            } label: {
+                HStack {
+                    Text("Black")
+                    Image(systemName: "circle.fill")
+                        .foregroundStyle(.black, .primary, .secondary)
+                }
+            }
+            Button {
+                onColorChange(.red)
+            } label: {
+                HStack {
+                    Text("Red")
+                    Image(systemName: "circle.fill")
+                        .foregroundStyle(.red, .primary, .secondary)
+                }
+            }
+            Button {
+                onColorChange(.orange)
+            } label: {
+                HStack {
+                    Text("Orange")
+                    Image(systemName: "circle.fill")
+                        .foregroundStyle(.orange, .primary, .secondary)
+                }
+            }
+            Button {
+                onColorChange(.yellow)
+            } label: {
+                HStack {
+                    Text("Yellow")
+                    Image(systemName: "circle.fill")
+                        .foregroundStyle(.yellow, .primary, .secondary)
+                }
+            }
+            Button {
+                onColorChange(.green)
+            } label: {
+                HStack {
+                    Text("Green")
+                    Image(systemName: "circle.fill")
+                        .foregroundStyle(.green, .primary, .secondary)
+                }
+            }
+            Button {
+                onColorChange(.blue)
+            } label: {
+                HStack {
+                    Text("Blue")
+                    Image(systemName: "circle.fill")
+                        .foregroundStyle(.blue, .primary, .secondary)
+                }
+            }
+            Button {
+                onColorChange(Color(hex: "B973FF"))
+            } label: {
+                HStack {
+                    Text("Purple")
+                    Image(systemName: "circle.fill")
+                        .foregroundStyle(Color(hex: "B973FF"), .primary, .secondary)
+                }
+            }
+            Button {
+                onColorChange(Color(hex: "FF73E8"))
+            } label: {
+                HStack {
+                    Text("Pink")
+                    Image(systemName: "circle.fill")
+                        .foregroundStyle(Color(hex: "FF73E8"), .primary, .secondary)
+                }
+            }
+        }
+        
+        Button("Move to Top") {
+            onMoveToTop()
+        }
+        
+        Button("Move to Bottom") {
+            onMoveToBottom()
+        }
     }
 }

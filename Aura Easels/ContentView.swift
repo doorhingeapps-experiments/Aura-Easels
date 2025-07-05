@@ -11,7 +11,7 @@ struct ContentView: View {
     @State private var elements: [CanvasElement] = [
         .init(type: .text("Hello World", TextStyleOptions(fontDesign: "regular", fontSize: 20, fontweight: "bold", alignment: "center")), position: .init(x: 150, y: 100), size: .init(width: 120, height: 40), color: .black),
         .init(type: .rectangle, position: .init(x: 200, y: 200), size: .init(width: 100, height: 100), color: .blue),
-        .init(type: .oval, position: .init(x: 100, y: 300), size: .init(width: 100, height: 100), color: .green)
+        .init(type: .oval, position: .init(x: 100, y: 300), size: .init(width: 100, height: 100), color: .blue)
     ]
     @State private var selectedElement: CanvasElement? = nil
     @State private var editingText: String = ""
@@ -28,6 +28,8 @@ struct ContentView: View {
     
     @State var popoverWebview: WebPage?
     @State var shrinkWebView = true
+    @State var currentWebsiteElement: CanvasElement?
+    @State var editingURL: String = ""
     
     var body: some View {
         GeometryReader { bigGeo in
@@ -70,6 +72,8 @@ struct ContentView: View {
                                                         let request = URLRequest(url: url)
                                                         webPage.load(request)
                                                         popoverWebview = webPage
+                                                        currentWebsiteElement = element
+                                                        editingURL = current
                                                     }
                                                 }
                                             }
@@ -92,6 +96,15 @@ struct ContentView: View {
                                         onTextSubmit: { newText in
                                             updateText(of: element, to: newText)
                                             isEditingText = false
+                                        },
+                                        onColorChange: { color in
+                                            updateColor(of: element, to: color)
+                                        },
+                                        onMoveToTop: {
+                                            moveToTop(element: element)
+                                        },
+                                        onMoveToBottom: {
+                                            moveToBottom(element: element)
                                         }
                                     )
                                 }
@@ -146,13 +159,22 @@ struct ContentView: View {
                                     }
                                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
                                         self.popoverWebview = nil
+                                        self.currentWebsiteElement = nil
                                     }
                                 }
                             
-                            WebView(popoverWebview)
-                                .frame(width: bigGeo.size.width * (2/3))
-                                .cornerRadius(15)
-                                .padding(.vertical, 30)
+                            VStack(spacing: 10) {
+                                TextField("Enter URL", text: $editingURL, onCommit: {
+                                    updateWebsiteURL()
+                                })
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .padding(.horizontal)
+                                
+                                WebView(popoverWebview)
+                                    .cornerRadius(15)
+                            }
+                            .frame(width: bigGeo.size.width * (2/3))
+                            .padding(.vertical, 30)
                                 .overlay(alignment: .topTrailing) {
                                     Button {
                                         withAnimation(.easeInOut(duration: 0.25)) {
@@ -160,6 +182,7 @@ struct ContentView: View {
                                         }
                                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
                                             self.popoverWebview = nil
+                                            self.currentWebsiteElement = nil
                                         }
                                     } label: {
                                         Label("Close", systemImage: "xmark")
@@ -264,15 +287,59 @@ struct ContentView: View {
 
 
     private func add(_ type: ElementType) {
-        let newElem = CanvasElement(type: type, position: .init(x: 200, y: 200), size: .init(width: 100, height: 80), color: .random)
+        let defaultColor = getDefaultColor(for: type)
+        let newElem = CanvasElement(type: type, position: .init(x: 200, y: 200), size: .init(width: 200, height: 200), color: defaultColor)
         elements.append(newElem)
         selectedElement = newElem
+    }
+    
+    private func getDefaultColor(for type: ElementType) -> Color {
+        switch type {
+        case .text, .website:
+            return .black
+        case .rectangle, .oval, .line, .drawing, .image:
+            return .blue
+        }
     }
 
     private func deleteSelected() {
         guard let sel = selectedElement else { return }
         elements.removeAll { $0.id == sel.id }
         selectedElement = nil
+    }
+    
+    private func updateColor(of element: CanvasElement, to color: Color) {
+        guard let idx = elements.firstIndex(where: { $0.id == element.id }) else { return }
+        elements[idx].color = color
+        selectedElement = elements[idx]
+    }
+    
+    private func moveToTop(element: CanvasElement) {
+        guard let idx = elements.firstIndex(where: { $0.id == element.id }) else { return }
+        let movedElement = elements.remove(at: idx)
+        elements.append(movedElement)
+        selectedElement = movedElement
+    }
+    
+    private func moveToBottom(element: CanvasElement) {
+        guard let idx = elements.firstIndex(where: { $0.id == element.id }) else { return }
+        let movedElement = elements.remove(at: idx)
+        elements.insert(movedElement, at: 0)
+        selectedElement = movedElement
+    }
+    
+    private func updateWebsiteURL() {
+        guard let currentElement = currentWebsiteElement,
+              let idx = elements.firstIndex(where: { $0.id == currentElement.id }) else { return }
+        
+        elements[idx].type = .website(editingURL)
+        selectedElement = elements[idx]
+        
+        // Update the webview with the new URL
+        if let url = URL(string: editingURL) {
+            let request = URLRequest(url: url)
+            popoverWebview?.load(request)
+        }
     }
 }
 
