@@ -130,53 +130,67 @@ struct ElementView: View {
                         .background(content: {
                             Color.white.opacity(0.001)
                         })
+                        .contentShape(Rectangle())
                         .contextMenu {
                             contextMenuItems
                         }
                         .position(element.position)
                         .offset(dragOffset)
                         .onTapGesture { onSelect() }
-                        .onLongPressGesture(minimumDuration: 0.1) { onMultiSelect() }
-                        .gesture(drag)
+                        .onLongPressGesture(minimumDuration: 0.5) { onMultiSelect() }
+                        .highPriorityGesture(drag)
                 }
 
             case .rectangle:
                 Rectangle()
                     .fill(element.color)
                     .frame(width: element.size.width, height: element.size.height)
+                    .background(content: {
+                        Color.white.opacity(0.001)
+                    })
+                    .contentShape(Rectangle())
                     .contextMenu {
                         contextMenuItems
                     }
                     .position(element.position)
                     .offset(dragOffset)
                     .onTapGesture { onSelect() }
-                    .onLongPressGesture(minimumDuration: 0.1) { onMultiSelect() }
-                    .gesture(drag)
+                    .onLongPressGesture(minimumDuration: 0.5) { onMultiSelect() }
+                    .highPriorityGesture(drag)
 
             case .oval:
                 Ellipse()
                     .fill(element.color)
                     .frame(width: element.size.width, height: element.size.height)
+                    .background(content: {
+                        Color.white.opacity(0.001)
+                    })
+                    .contentShape(Rectangle())
                     .contextMenu {
                         contextMenuItems
                     }
                     .position(element.position)
                     .offset(dragOffset)
                     .onTapGesture { onSelect() }
-                    .onLongPressGesture(minimumDuration: 0.1) { onMultiSelect() }
-                    .gesture(drag)
+                    .onLongPressGesture(minimumDuration: 0.5) { onMultiSelect() }
+                    .highPriorityGesture(drag)
             case .line(let rotation):
                 RoundedRectangle(cornerRadius: 10)
                     .fill(element.color)
                     .frame(width: element.size.width, height: 2)
+                    .background(content: {
+                        Color.white.opacity(0.001)
+                            .frame(width: element.size.width, height: max(20, element.size.height))
+                    })
+                    .contentShape(Rectangle())
                     .contextMenu {
                         contextMenuItems
                     }
                     .position(element.position)
                     .offset(dragOffset)
                     .onTapGesture { onSelect() }
-                    .onLongPressGesture(minimumDuration: 0.1) { onMultiSelect() }
-                    .gesture(drag)
+                    .onLongPressGesture(minimumDuration: 0.5) { onMultiSelect() }
+                    .highPriorityGesture(drag)
             case .website(let url):
 //                if finishedLoading {
 //                    WebView(webPage)
@@ -184,7 +198,7 @@ struct ElementView: View {
 //                        .position(element.position)
 //                        .offset(dragOffset)
 //                        .onTapGesture { onSelect() }
-//                        .gesture(drag)
+//                        .highPriorityGesture(drag)
 //                }
 //                else {
 //                    Rectangle()
@@ -193,7 +207,7 @@ struct ElementView: View {
 //                        .position(element.position)
 //                        .offset(dragOffset)
 //                        .onTapGesture { onSelect() }
-//                        .gesture(drag)
+//                        .highPriorityGesture(drag)
 //                        .onAppear() {
 //                            Task {
 //                                await webPage.load(URLRequest(url: URL(string: url) ?? URL(string: "https://apple.com")!))
@@ -224,14 +238,18 @@ struct ElementView: View {
                         width: element.size.width,
                         height: element.size.height
                     )
+                    .background(content: {
+                        Color.white.opacity(0.001)
+                    })
+                    .contentShape(Rectangle())
                     .contextMenu {
                         contextMenuItems
                     }
                     .position(element.position)
                     .offset(dragOffset)
                     .onTapGesture { onSelect() }
-                    .onLongPressGesture(minimumDuration: 0.1) { onMultiSelect() }
-                    .gesture(drag)
+                    .onLongPressGesture(minimumDuration: 0.5) { onMultiSelect() }
+                    .highPriorityGesture(drag)
                 }
             case .drawing:
                 EmptyView()
@@ -263,7 +281,7 @@ struct ElementView: View {
 
 
     private var drag: some Gesture {
-        DragGesture(minimumDistance: 2)
+        DragGesture(minimumDistance: isSelected ? 0 : 2)
             .onChanged { value in onDragChanged(value.translation) }
             .onEnded   { value in onDragEnded(value.translation) }
     }

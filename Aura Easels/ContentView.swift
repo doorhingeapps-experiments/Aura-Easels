@@ -40,15 +40,90 @@ struct ContentView: View {
     // Snapping state
     @State var snapIndicatorLines: [SnapLine] = []
     @State var snappedPosition: CGPoint? = nil
+    @State private var isSnapEnabled: Bool = true
+    @State private var showSettings: Bool = false
     
     var body: some View {
         GeometryReader { bigGeo in
-            ZStack {
-                VStack {
-                    Text("Canvas Editor")
-                        .font(.largeTitle)
-                        .padding(.top)
+            ZStack(alignment: .top) {
+                HStack(spacing: 10) {
+                    //GlassEffectContainer {
+                        Button(action: {
+                            showSettings.toggle()
+                        }) {
+                            Image(systemName: "gear")
+                                .frame(height: 50)
+                        }.buttonStyle(.glass)
+                        
+                        Button {
+                            let textStyle = TextStyleOptions(fontDesign: "regular", fontSize: 20, fontweight: "bold", alignment: "center")
+                            modelContext.insert(textStyle)
+                            add(.text("New Text", textStyle))
+                        } label: {
+                            Image(systemName: "textformat")
+                                .frame(height: 50)
+                        }.buttonStyle(.glass)
+                        
+                        Button {
+                            add(.rectangle)
+                        } label: {
+                            Image(systemName: "rectangle")
+                        }.buttonStyle(.glass)
+                        
+                        Button {
+                            add(.oval)
+                        } label: {
+                            Image(systemName: "circle")
+                                .frame(height: 50)
+                        }.buttonStyle(.glass)
+                        
+                        Button {
+                            add(.line(0.0))
+                        } label: {
+                            Image(systemName: "line.diagonal")
+                                .frame(height: 50)
+                        }.buttonStyle(.glass)
                     
+                    Button {
+                        add(.website("https://google.com"))
+                    } label: {
+                        Image(systemName: "globe.desk")
+                    }.buttonStyle(.glass)
+                    
+                    if selectedElement != nil || !selectedElements.isEmpty {
+                        Button {
+                            deleteSelected()
+                        } label: {
+                            Image(systemName: "trash")
+                                .frame(height: 50)
+                        }.buttonStyle(.glass)
+                            .keyboardShortcut(.delete, modifiers: [])
+                    }
+                        
+//                        Button("Add Text") {
+//                            let textStyle = TextStyleOptions(fontDesign: "regular", fontSize: 20, fontweight: "bold", alignment: "center")
+//                            modelContext.insert(textStyle)
+//                            add(.text("New Text", textStyle))
+//                        }.buttonStyle(.glass)
+//                        Button("Add Rectangle") { add(.rectangle) }
+//                            .buttonStyle(.glass)
+//                        Button("Add Oval") { add(.oval) }
+//                            .buttonStyle(.glass)
+//                        Button("Add Line") { add(.line(45.0)) }
+//                            .buttonStyle(.glass)
+//                        Button("Add Website") { add(.website("https://apple.com")) }
+//                            .buttonStyle(.glass)
+//                        Spacer()
+//                        if selectedElement != nil || !selectedElements.isEmpty {
+//                            Button("Delete Selected", role: .destructive) { deleteSelected() }
+//                                .keyboardShortcut(.delete, modifiers: [])
+//                                .buttonStyle(.glass)
+//                        }
+                    //}
+                }.zIndex(1000)
+                    .font(.title2)
+                    .padding(20)
+                VStack {
                     GeometryReader { geo in
                         let screenH = geo.size.height
                         let lastBottom = canvas.elements.map { $0.position.y + $0.size.height/2 }.max() ?? 0
@@ -65,7 +140,7 @@ struct ContentView: View {
                                         isEditingText = false
                                     }
                                     .gesture(
-                                        DragGesture(minimumDistance: 10)
+                                        DragGesture(minimumDistance: 20)
                                             .onChanged { value in
                                                 // Only allow box selection if no single item is selected with resize handles
                                                 guard selectedElement == nil else { return }
@@ -153,25 +228,32 @@ struct ContentView: View {
                                             }
                                             
                                             if selectedElement?.id == element.id && !isResizing {
-                                                let canvasSize = CGSize(width: geo.size.width, height: canvasH)
-                                                let snapResult = calculateSnap(for: element, with: tr, canvasSize: canvasSize)
-                                                
-                                                // Calculate offset from snapped position
-                                                let snappedOffset = CGSize(
-                                                    width: snapResult.position.x - element.position.x,
-                                                    height: snapResult.position.y - element.position.y
-                                                )
-                                                
-                                                dragOffset = snappedOffset
-                                                snapIndicatorLines = snapResult.lines
-                                                snappedPosition = snapResult.position
+                                                if isSnapEnabled {
+                                                    let canvasSize = CGSize(width: geo.size.width, height: canvasH)
+                                                    let snapResult = calculateSnap(for: element, with: tr, canvasSize: canvasSize)
+                                                    
+                                                    // Calculate offset from snapped position
+                                                    let snappedOffset = CGSize(
+                                                        width: snapResult.position.x - element.position.x,
+                                                        height: snapResult.position.y - element.position.y
+                                                    )
+                                                    
+                                                    dragOffset = snappedOffset
+                                                    snapIndicatorLines = snapResult.lines
+                                                    snappedPosition = snapResult.position
+                                                } else {
+                                                    // No snapping, just use the raw translation
+                                                    dragOffset = tr
+                                                    snapIndicatorLines = []
+                                                    snappedPosition = nil
+                                                }
                                             } else if selectedElements.contains(element.id) && !isResizing {
                                                 groupDragOffset = tr
                                             }
                                         },
                                         onDragEnded: { tr in
                                             if selectedElement?.id == element.id && !isResizing {
-                                                if let snapped = snappedPosition {
+                                                if isSnapEnabled, let snapped = snappedPosition {
                                                     updatePositionAbsolute(of: element, to: snapped)
                                                 } else {
                                                     updatePosition(of: element, by: tr)
@@ -243,17 +325,19 @@ struct ContentView: View {
                                     .zIndex(1001)
                                 }
                                 
-                                // Snap indicator lines
-                                ForEach(snapIndicatorLines.indices, id: \.self) { index in
-                                    let line = snapIndicatorLines[index]
-                                    Path { path in
-                                        path.move(to: line.start)
-                                        path.addLine(to: line.end)
+                                // Snap indicator lines (only show when snapping is enabled)
+                                if isSnapEnabled {
+                                    ForEach(snapIndicatorLines.indices, id: \.self) { index in
+                                        let line = snapIndicatorLines[index]
+                                        Path { path in
+                                            path.move(to: line.start)
+                                            path.addLine(to: line.end)
+                                        }
+                                        .stroke(Color(.systemBlue), lineWidth: 1)
+                                        .allowsHitTesting(false)
                                     }
-                                    .stroke(Color(.systemBlue), lineWidth: 1)
-                                    .allowsHitTesting(false)
+                                    .zIndex(999)
                                 }
-                                .zIndex(999)
                             }
                             .frame(maxWidth: .infinity)
                             .frame(height: canvasH)
@@ -275,7 +359,6 @@ struct ContentView: View {
                         Spacer()
                         if selectedElement != nil || !selectedElements.isEmpty {
                             Button("Delete Selected", role: .destructive) { deleteSelected() }
-//                                .keyboardShortcut(.delete)
                                 .keyboardShortcut(.delete, modifiers: [])
                         }
                     }
@@ -335,6 +418,9 @@ struct ContentView: View {
                     }
                 }
             }
+        }
+        .sheet(isPresented: $showSettings) {
+            SettingsView(isSnapEnabled: $isSnapEnabled)
         }
     }
 
@@ -901,6 +987,32 @@ struct BoxSelectionOverlay: View {
                     .position(x: selectionRect.midX, y: selectionRect.midY)
             )
             .allowsHitTesting(false)
+    }
+}
+
+// MARK: – Settings View
+struct SettingsView: View {
+    @Binding var isSnapEnabled: Bool
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationView {
+            Form {
+                Section(header: Text("Canvas Settings")) {
+                    Toggle("Enable Snapping", isOn: $isSnapEnabled)
+                        .toggleStyle(SwitchToggleStyle())
+                }
+                
+                Section(footer: Text("When enabled, elements will snap to guides and other elements while dragging.")) {
+                    EmptyView()
+                }
+            }
+            .navigationTitle("Settings")
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarItems(trailing: Button("Done") {
+                dismiss()
+            })
+        }
     }
 }
 
