@@ -63,7 +63,7 @@ struct ElementView: View {
                                 
                                 // Font Size Controls
                                 Button(action: {
-                                    let newSize = max(12, currentStyle.fontSize - 2)
+                                    let newSize = nextFontSize(currentStyle.fontSize, increase: false)
                                     let newStyle = TextStyleOptions(
                                         fontDesign: currentStyle.fontDesign,
                                         fontSize: newSize,
@@ -81,7 +81,7 @@ struct ElementView: View {
                                     .foregroundColor(.secondary)
                                 
                                 Button(action: {
-                                    let newSize = min(72, currentStyle.fontSize + 2)
+                                    let newSize = nextFontSize(currentStyle.fontSize, increase: true)
                                     let newStyle = TextStyleOptions(
                                         fontDesign: currentStyle.fontDesign,
                                         fontSize: newSize,
@@ -277,6 +277,19 @@ struct ElementView: View {
             return "text.alignright"
         default:
             return "text.alignleft"
+        }
+    }
+    
+    private let fontSizes: [CGFloat] = [5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 32, 48, 64, 72, 96]
+    
+    private func nextFontSize(_ currentSize: CGFloat, increase: Bool) -> CGFloat {
+        let closest = fontSizes.min { abs($0 - currentSize) < abs($1 - currentSize) } ?? currentSize
+        guard let currentIndex = fontSizes.firstIndex(of: closest) else { return currentSize }
+        
+        if increase {
+            return currentIndex < fontSizes.count - 1 ? fontSizes[currentIndex + 1] : currentSize
+        } else {
+            return currentIndex > 0 ? fontSizes[currentIndex - 1] : currentSize
         }
     }
     

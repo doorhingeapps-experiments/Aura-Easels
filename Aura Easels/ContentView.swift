@@ -31,6 +31,10 @@ struct ContentView: View {
     @State var currentWebsiteElement: CanvasElement?
     @State var editingURL: String = ""
     
+    // Snapping state
+    @State var snapIndicatorLines: [SnapLine] = []
+    @State var snappedPosition: CGPoint? = nil
+    
     var body: some View {
         GeometryReader { bigGeo in
             ZStack {
@@ -84,13 +88,30 @@ struct ContentView: View {
                                         },
                                         onDragChanged: { tr in
                                             if selectedElement?.id == element.id && !isResizing {
-                                                dragOffset = tr
+                                                let canvasSize = CGSize(width: geo.size.width, height: canvasH)
+                                                let snapResult = calculateSnap(for: element, with: tr, canvasSize: canvasSize)
+                                                
+                                                // Calculate offset from snapped position
+                                                let snappedOffset = CGSize(
+                                                    width: snapResult.position.x - element.position.x,
+                                                    height: snapResult.position.y - element.position.y
+                                                )
+                                                
+                                                dragOffset = snappedOffset
+                                                snapIndicatorLines = snapResult.lines
+                                                snappedPosition = snapResult.position
                                             }
                                         },
                                         onDragEnded: { tr in
                                             if selectedElement?.id == element.id && !isResizing {
-                                                updatePosition(of: element, by: tr)
+                                                if let snapped = snappedPosition {
+                                                    updatePositionAbsolute(of: element, to: snapped)
+                                                } else {
+                                                    updatePosition(of: element, by: tr)
+                                                }
                                                 dragOffset = .zero
+                                                snapIndicatorLines = []
+                                                snappedPosition = nil
                                             }
                                         },
                                         onTextSubmit: { newText in
@@ -130,6 +151,18 @@ struct ContentView: View {
                                     )
                                     .zIndex(1000)
                                 }
+                                
+                                // Snap indicator lines
+                                ForEach(snapIndicatorLines.indices, id: \.self) { index in
+                                    let line = snapIndicatorLines[index]
+                                    Path { path in
+                                        path.move(to: line.start)
+                                        path.addLine(to: line.end)
+                                    }
+                                    .stroke(Color.black, lineWidth: 1)
+                                    .allowsHitTesting(false)
+                                }
+                                .zIndex(999)
                             }
                             .frame(maxWidth: .infinity)
                             .frame(height: canvasH)
@@ -213,6 +246,12 @@ struct ContentView: View {
         guard let idx = elements.firstIndex(where: { $0.id == element.id }) else { return }
         elements[idx].position.x += tr.width
         elements[idx].position.y += tr.height
+        selectedElement = elements[idx]
+    }
+    
+    private func updatePositionAbsolute(of element: CanvasElement, to position: CGPoint) {
+        guard let idx = elements.firstIndex(where: { $0.id == element.id }) else { return }
+        elements[idx].position = position
         selectedElement = elements[idx]
     }
 
@@ -366,6 +405,65 @@ struct ContentView: View {
             popoverWebview?.load(request)
         }
     }
+    
+    private func calculateSnap(for element: CanvasElement, with dragOffset: CGSize, canvasSize: CGSize) -> (position: CGPoint, lines: [SnapLine]) {
+        let snapThreshold: CGFloat = 20
+        let currentCenter = CGPoint(
+            x: element.position.x + dragOffset.width,
+            y: element.position.y + dragOffset.height
+        )
+        let elementLeftEdge = currentCenter.x - element.size.width / 2
+        let elementRightEdge = currentCenter.x + element.size.width / 2
+        let canvasCenterX = canvasSize.width / 2
+        let canvasLeft: CGFloat = 0
+        let canvasRight = canvasSize.width
+        
+        var snappedPosition = currentCenter
+        var snapLines: [SnapLine] = []
+        
+        // Center vertical snap
+        if abs(currentCenter.x - canvasCenterX) < snapThreshold {
+            snappedPosition.x = canvasCenterX
+            snapLines.append(SnapLine(
+                start: CGPoint(x: canvasCenterX, y: 0),
+                end: CGPoint(x: canvasCenterX, y: canvasSize.height),
+                type: .centerVertical
+            ))
+        }
+        // Left edge snap (element left to canvas left)
+        else if abs(elementLeftEdge - canvasLeft) < snapThreshold {
+            snappedPosition.x = canvasLeft + element.size.width / 2
+            snapLines.append(SnapLine(
+                start: CGPoint(x: canvasLeft, y: 0),
+                end: CGPoint(x: canvasLeft, y: canvasSize.height),
+                type: .leftEdge
+            ))
+        }
+        // Right edge snap (element right to canvas right)
+        else if abs(elementRightEdge - canvasRight) < snapThreshold {
+            snappedPosition.x = canvasRight - element.size.width / 2
+            snapLines.append(SnapLine(
+                start: CGPoint(x: canvasRight, y: 0),
+                end: CGPoint(x: canvasRight, y: canvasSize.height),
+                type: .rightEdge
+            ))
+        }
+        
+        return (snappedPosition, snapLines)
+    }
+}
+
+// MARK: – Snap Line
+struct SnapLine {
+    let start: CGPoint
+    let end: CGPoint
+    let type: SnapType
+}
+
+enum SnapType {
+    case centerVertical
+    case leftEdge
+    case rightEdge
 }
 
 // MARK: – Selection Overlay
