@@ -105,6 +105,12 @@ struct ContentView: View {
                                         },
                                         onMoveToBottom: {
                                             moveToBottom(element: element)
+                                        },
+                                        onDelete: {
+                                            deleteElement(element)
+                                        },
+                                        onTextStyleChange: { newStyle in
+                                            updateTextStyle(of: element, to: newStyle)
                                         }
                                     )
                                 }
@@ -212,8 +218,20 @@ struct ContentView: View {
 
     private func updateText(of element: CanvasElement, to text: String) {
         guard let idx = elements.firstIndex(where: { $0.id == element.id }) else { return }
-        elements[idx].type = .text(text, TextStyleOptions(fontDesign: "regular", fontSize: 20, fontweight: "bold", alignment: "center"))
+        if case .text(_, let currentStyle) = element.type {
+            elements[idx].type = .text(text, currentStyle)
+        } else {
+            elements[idx].type = .text(text, TextStyleOptions(fontDesign: "regular", fontSize: 20, fontweight: "bold", alignment: "center"))
+        }
         selectedElement = elements[idx]
+    }
+    
+    private func updateTextStyle(of element: CanvasElement, to style: TextStyleOptions) {
+        guard let idx = elements.firstIndex(where: { $0.id == element.id }) else { return }
+        if case .text(let currentText, _) = element.type {
+            elements[idx].type = .text(currentText, style)
+            selectedElement = elements[idx]
+        }
     }
 
     private func resizeElement(_ element: CanvasElement, handle: ResizeHandle, translation tr: CGSize) {
@@ -306,6 +324,13 @@ struct ContentView: View {
         guard let sel = selectedElement else { return }
         elements.removeAll { $0.id == sel.id }
         selectedElement = nil
+    }
+    
+    private func deleteElement(_ element: CanvasElement) {
+        elements.removeAll { $0.id == element.id }
+        if selectedElement?.id == element.id {
+            selectedElement = nil
+        }
     }
     
     private func updateColor(of element: CanvasElement, to color: Color) {

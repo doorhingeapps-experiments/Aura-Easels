@@ -24,6 +24,8 @@ struct ElementView: View {
     let onColorChange: (Color) -> Void
     let onMoveToTop: () -> Void
     let onMoveToBottom: () -> Void
+    let onDelete: () -> Void
+    let onTextStyleChange: (TextStyleOptions) -> Void
     
     @State var webPage = WebPage()
     @State var finishedLoading = false
@@ -39,7 +41,84 @@ struct ElementView: View {
                         onTextSubmit(editingText)
                     })
                     .textFieldStyle(.plain)
+                    .modifier(TextStyleModifier(fontDesign: style.fontDesign, fontSize: style.fontSize, fontWeight: style.fontweight, alignment: style.alignment, verticalAlignment: ""))
                     .frame(width: element.size.width, height: element.size.height, alignment: .topLeading)
+                    .overlay(alignment: .top) {
+                        HStack {
+                            if case .text(_, let currentStyle) = element.type {
+                                // Font Weight Toggle
+                                Button(action: {
+                                    let newStyle = TextStyleOptions(
+                                        fontDesign: currentStyle.fontDesign,
+                                        fontSize: currentStyle.fontSize,
+                                        fontweight: currentStyle.fontweight == "bold" ? "regular" : "bold",
+                                        alignment: currentStyle.alignment
+                                    )
+                                    onTextStyleChange(newStyle)
+                                }) {
+                                    Image(systemName: "bold")
+                                        .foregroundColor(currentStyle.fontweight == "bold" ? .blue : .gray)
+                                }
+                                .buttonStyle(.plain)
+                                
+                                // Font Size Controls
+                                Button(action: {
+                                    let newSize = max(12, currentStyle.fontSize - 2)
+                                    let newStyle = TextStyleOptions(
+                                        fontDesign: currentStyle.fontDesign,
+                                        fontSize: newSize,
+                                        fontweight: currentStyle.fontweight,
+                                        alignment: currentStyle.alignment
+                                    )
+                                    onTextStyleChange(newStyle)
+                                }) {
+                                    Image(systemName: "minus.circle")
+                                }
+                                .buttonStyle(.plain)
+                                
+                                Text("\(Int(currentStyle.fontSize))")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                
+                                Button(action: {
+                                    let newSize = min(72, currentStyle.fontSize + 2)
+                                    let newStyle = TextStyleOptions(
+                                        fontDesign: currentStyle.fontDesign,
+                                        fontSize: newSize,
+                                        fontweight: currentStyle.fontweight,
+                                        alignment: currentStyle.alignment
+                                    )
+                                    onTextStyleChange(newStyle)
+                                }) {
+                                    Image(systemName: "plus.circle")
+                                }
+                                .buttonStyle(.plain)
+                                
+                                // Alignment Controls
+                                Button(action: {
+                                    let newAlignment = currentStyle.alignment == "leading" ? "center" :
+                                                      currentStyle.alignment == "center" ? "trailing" : "leading"
+                                    let newStyle = TextStyleOptions(
+                                        fontDesign: currentStyle.fontDesign,
+                                        fontSize: currentStyle.fontSize,
+                                        fontweight: currentStyle.fontweight,
+                                        alignment: newAlignment
+                                    )
+                                    onTextStyleChange(newStyle)
+                                }) {
+                                    Image(systemName: alignmentIcon(for: currentStyle.alignment))
+                                        .foregroundColor(.primary)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.white.opacity(0.9))
+                        .cornerRadius(8)
+                        .shadow(radius: 2)
+                        .offset(y: -30)
+                    }
                     .position(element.position)
                 } else {
                     Text(str)
@@ -190,6 +269,17 @@ struct ElementView: View {
         }
     }
     
+    private func alignmentIcon(for alignment: String) -> String {
+        switch alignment {
+        case "center":
+            return "text.aligncenter"
+        case "trailing":
+            return "text.alignright"
+        default:
+            return "text.alignleft"
+        }
+    }
+    
     @ViewBuilder
     private var contextMenuItems: some View {
         Menu("Change Color") {
@@ -273,6 +363,10 @@ struct ElementView: View {
         
         Button("Move to Bottom") {
             onMoveToBottom()
+        }
+        
+        Button("Delete", role: .destructive) {
+            onDelete()
         }
     }
 }
