@@ -179,9 +179,9 @@ struct ElementView: View {
                     .fill(element.color)
                     .frame(width: element.size.width, height: 2)
                     .background(content: {
-                        Color.white.opacity(0.001)
-                            .frame(width: element.size.width, height: max(20, element.size.height))
+                        Color.blue.opacity(0.001)
                     })
+                    .frame(width: element.size.width, height: element.size.height)
                     .contentShape(Rectangle())
                     .contextMenu {
                         contextMenuItems
@@ -281,7 +281,7 @@ struct ElementView: View {
 
 
     private var drag: some Gesture {
-        DragGesture(minimumDistance: isSelected ? 0 : 2)
+        DragGesture(minimumDistance: 5)
             .onChanged { value in onDragChanged(value.translation) }
             .onEnded   { value in onDragEnded(value.translation) }
     }

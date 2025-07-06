@@ -52,7 +52,7 @@ struct ContentView: View {
                             showSettings.toggle()
                         }) {
                             Image(systemName: "gear")
-                                .frame(height: 50)
+                                .frame(height: 30)
                         }.buttonStyle(.glass)
                         
                         Button {
@@ -61,27 +61,28 @@ struct ContentView: View {
                             add(.text("New Text", textStyle))
                         } label: {
                             Image(systemName: "textformat")
-                                .frame(height: 50)
+                                .frame(height: 30)
                         }.buttonStyle(.glass)
                         
                         Button {
                             add(.rectangle)
                         } label: {
                             Image(systemName: "rectangle")
+                                .frame(height: 30)
                         }.buttonStyle(.glass)
                         
                         Button {
                             add(.oval)
                         } label: {
                             Image(systemName: "circle")
-                                .frame(height: 50)
+                                .frame(height: 30)
                         }.buttonStyle(.glass)
                         
                         Button {
                             add(.line(0.0))
                         } label: {
                             Image(systemName: "line.diagonal")
-                                .frame(height: 50)
+                                .frame(height: 30)
                         }.buttonStyle(.glass)
                     
                     Button {
@@ -95,7 +96,7 @@ struct ContentView: View {
                             deleteSelected()
                         } label: {
                             Image(systemName: "trash")
-                                .frame(height: 50)
+                                .frame(height: 30)
                         }.buttonStyle(.glass)
                             .keyboardShortcut(.delete, modifiers: [])
                     }
@@ -120,7 +121,7 @@ struct ContentView: View {
 //                                .buttonStyle(.glass)
 //                        }
                     //}
-                }.zIndex(1000)
+                }.zIndex(102)
                     .font(.title2)
                     .padding(20)
                 VStack {
@@ -302,7 +303,7 @@ struct ContentView: View {
                                             resizeStartPosition = nil
                                         }
                                     )
-                                    .zIndex(1000)
+                                    .zIndex(100)
                                 }
                                 
                                 // Multi-selection overlays
@@ -312,7 +313,7 @@ struct ContentView: View {
                                             element: element,
                                             dragOffset: groupDragOffset
                                         )
-                                        .zIndex(999)
+                                        .zIndex(99)
                                     }
                                 }
                                 
@@ -322,7 +323,7 @@ struct ContentView: View {
                                         start: boxSelectionStart,
                                         end: boxSelectionEnd
                                     )
-                                    .zIndex(1001)
+                                    .zIndex(101)
                                 }
                                 
                                 // Snap indicator lines (only show when snapping is enabled)
@@ -336,7 +337,7 @@ struct ContentView: View {
                                         .stroke(Color(.systemBlue), lineWidth: 1)
                                         .allowsHitTesting(false)
                                     }
-                                    .zIndex(999)
+                                    .zIndex(99)
                                 }
                             }
                             .frame(maxWidth: .infinity)
@@ -345,25 +346,6 @@ struct ContentView: View {
                         .frame(height: screenH)
                     }
                     .padding()
-                    
-                    HStack {
-                        Button("Add Text") { 
-                            let textStyle = TextStyleOptions(fontDesign: "regular", fontSize: 20, fontweight: "bold", alignment: "center")
-                            modelContext.insert(textStyle)
-                            add(.text("New Text", textStyle))
-                        }
-                        Button("Add Rectangle") { add(.rectangle) }
-                        Button("Add Oval") { add(.oval) }
-                        Button("Add Line") { add(.line(45.0)) }
-                        Button("Add Website") { add(.website("https://apple.com")) }
-                        Spacer()
-                        if selectedElement != nil || !selectedElements.isEmpty {
-                            Button("Delete Selected", role: .destructive) { deleteSelected() }
-                                .keyboardShortcut(.delete, modifiers: [])
-                        }
-                    }
-                    .padding(.horizontal)
-                    .padding(.bottom)
                 }
                 
                 Group {
@@ -416,7 +398,7 @@ struct ContentView: View {
                                 }
                             }
                     }
-                }
+                }.zIndex(103)
             }
         }
         .sheet(isPresented: $showSettings) {
