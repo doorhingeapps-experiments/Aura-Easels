@@ -44,10 +44,32 @@ struct ElementView: View {
                     })
                     .textFieldStyle(.plain)
                     .modifier(TextStyleModifier(fontDesign: style.fontDesign, fontSize: style.fontSize, fontWeight: style.fontweight, alignment: style.alignment, verticalAlignment: ""))
-                    .frame(width: element.size.width, height: element.size.height, alignment: .topLeading)
+                    .foregroundColor(element.color)
+                    .frame(width: element.size.width, height: element.size.height, alignment: .center)
+                    .multilineTextAlignment(.center)
                     .overlay(alignment: .top) {
-                        HStack {
+                        HStack(spacing: 12) {
                             if case .text(_, let currentStyle) = element.type {
+                                // Font Design Toggle
+                                Button(action: {
+                                    let newDesign = nextFontDesign(currentStyle.fontDesign)
+                                    let newStyle = TextStyleOptions(
+                                        fontDesign: newDesign,
+                                        fontSize: currentStyle.fontSize,
+                                        fontweight: currentStyle.fontweight,
+                                        alignment: currentStyle.alignment
+                                    )
+                                    onTextStyleChange(newStyle)
+                                }) {
+                                    Image(systemName: fontDesignIcon(for: currentStyle.fontDesign))
+                                        .foregroundColor(.primary)
+                                        .font(.title2)
+                                }
+                                .buttonStyle(.plain)
+                                .frame(width: 44, height: 44)
+                                .background(Color.white.opacity(0.8))
+                                .cornerRadius(8)
+                                
                                 // Font Weight Toggle
                                 Button(action: {
                                     let newStyle = TextStyleOptions(
@@ -60,8 +82,12 @@ struct ElementView: View {
                                 }) {
                                     Image(systemName: "bold")
                                         .foregroundColor(currentStyle.fontweight == "bold" ? .blue : .gray)
+                                        .font(.title2)
                                 }
                                 .buttonStyle(.plain)
+                                .frame(width: 44, height: 44)
+                                .background(Color.white.opacity(0.8))
+                                .cornerRadius(8)
                                 
                                 // Font Size Controls
                                 Button(action: {
@@ -75,12 +101,24 @@ struct ElementView: View {
                                     onTextStyleChange(newStyle)
                                 }) {
                                     Image(systemName: "minus.circle")
+                                        .font(.title2)
                                 }
                                 .buttonStyle(.plain)
+                                .frame(width: 44, height: 44)
+                                .background(Color.white.opacity(0.8))
+                                .cornerRadius(8)
                                 
-                                Text("\(Int(currentStyle.fontSize))")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                                VStack(spacing: 2) {
+                                    Text("\(Int(currentStyle.fontSize))")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    Text("pt")
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                }
+                                .frame(width: 44, height: 44)
+                                .background(Color.white.opacity(0.8))
+                                .cornerRadius(8)
                                 
                                 Button(action: {
                                     let newSize = nextFontSize(currentStyle.fontSize, increase: true)
@@ -93,8 +131,12 @@ struct ElementView: View {
                                     onTextStyleChange(newStyle)
                                 }) {
                                     Image(systemName: "plus.circle")
+                                        .font(.title2)
                                 }
                                 .buttonStyle(.plain)
+                                .frame(width: 44, height: 44)
+                                .background(Color.white.opacity(0.8))
+                                .cornerRadius(8)
                                 
                                 // Alignment Controls
                                 Button(action: {
@@ -110,16 +152,20 @@ struct ElementView: View {
                                 }) {
                                     Image(systemName: alignmentIcon(for: currentStyle.alignment))
                                         .foregroundColor(.primary)
+                                        .font(.title2)
                                 }
                                 .buttonStyle(.plain)
+                                .frame(width: 44, height: 44)
+                                .background(Color.white.opacity(0.8))
+                                .cornerRadius(8)
                             }
                         }
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.white.opacity(0.9))
-                        .cornerRadius(8)
-                        .shadow(radius: 2)
-                        .offset(y: -30)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(Color.white.opacity(0.95))
+                        .cornerRadius(12)
+                        .shadow(radius: 4)
+                        .offset(y: -40)
                     }
                     .position(element.position)
                 } else {
@@ -318,6 +364,26 @@ struct ElementView: View {
             return currentIndex < fontSizes.count - 1 ? fontSizes[currentIndex + 1] : currentSize
         } else {
             return currentIndex > 0 ? fontSizes[currentIndex - 1] : currentSize
+        }
+    }
+    
+    private func nextFontDesign(_ currentDesign: String) -> String {
+        let designs = ["regular", "monospaced", "serif", "rounded"]
+        guard let currentIndex = designs.firstIndex(of: currentDesign) else { return "regular" }
+        let nextIndex = (currentIndex + 1) % designs.count
+        return designs[nextIndex]
+    }
+    
+    private func fontDesignIcon(for design: String) -> String {
+        switch design {
+        case "monospaced":
+            return "textformat.123"
+        case "serif":
+            return "textformat.abc"
+        case "rounded":
+            return "textformat.alt"
+        default:
+            return "textformat"
         }
     }
     

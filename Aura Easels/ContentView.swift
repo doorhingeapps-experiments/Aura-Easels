@@ -27,10 +27,8 @@ struct ContentView: View {
     @State private var boxSelectionEnd: CGPoint = .zero
     
     
-    private let minWidth:  CGFloat = 50
-    private let maxWidth:  CGFloat = 1000
-    private let minHeight: CGFloat = 50
-    private let maxHeight: CGFloat = 1000
+    private let minWidth:  CGFloat = ElementConstants.minWidth
+    private let minHeight: CGFloat = ElementConstants.minHeight
     
     @State var popoverWebview: WebPage?
     @State var shrinkWebView = true
@@ -450,6 +448,11 @@ struct ContentView: View {
               let startPosition = resizeStartPosition,
               let idx = canvas.elements.firstIndex(where: { $0.id == element.id }) else { return }
 
+        // Get element-specific max dimensions
+        let maxSize = ElementConstants.maxSize(for: element.type)
+        let maxWidth = maxSize.width
+        let maxHeight = maxSize.height
+
         // compute new size within your four limits
         var newSize = startSize
         func clamp(_ v: CGFloat, min: CGFloat, max: CGFloat) -> CGFloat {
@@ -518,7 +521,8 @@ struct ContentView: View {
 
     private func add(_ type: ElementType) {
         let defaultColor = getDefaultColor(for: type)
-        let newElem = CanvasElement(type: type, position: .init(x: 200, y: 200), size: .init(width: 200, height: 200), color: defaultColor)
+        let defaultSize = ElementConstants.defaultSize(for: type)
+        let newElem = CanvasElement(type: type, position: .init(x: 200, y: 200), size: defaultSize, color: defaultColor)
         canvas.elements.append(newElem)
         modelContext.insert(newElem)
         selectedElement = newElem
