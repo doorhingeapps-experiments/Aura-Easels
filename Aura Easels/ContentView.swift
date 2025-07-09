@@ -34,12 +34,16 @@ struct ContentView: View {
     @State var shrinkWebView = true
     @State var currentWebsiteElement: CanvasElement?
     @State var editingURL: String = ""
+    @State var currentWebviewURL: URL?
     
     // Snapping state
     @State var snapIndicatorLines: [SnapLine] = []
     @State var snappedPosition: CGPoint? = nil
     @State private var isSnapEnabled: Bool = true
     @State private var showSettings: Bool = false
+    @State var shouldShowUpdateButton = false
+    
+    @Namespace var namespace
     
     var body: some View {
         GeometryReader { bigGeo in
@@ -363,31 +367,62 @@ struct ContentView: View {
                                 }
                             
                             VStack(spacing: 10) {
-                                TextField("Enter URL", text: $editingURL, onCommit: {
-                                    updateWebsiteURL()
-                                })
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
-                                .padding(.horizontal)
+                                GlassEffectContainer {
+                                    HStack( spacing: 10) {
+                                        // Update URL button (only shows if URLs differ)
+                                        if shouldShowUpdateButton {
+                                            Button {
+                                                updateElementWithCurrentURL()
+                                                withAnimation {
+                                                    shouldShowUpdateButton = false
+                                                }
+                                            } label: {
+//                                                Label("Update URL", systemImage: "arrow.2.squarepath")
+                                                Image(systemName: "arrow.2.squarepath")
+                                                    .padding(2)
+                                            }.buttonStyle(.glass)
+                                                .glassEffectID("updateurl", in: namespace)
+                                                .glassEffectTransition(.matchedGeometry(properties: [.frame], anchor: .trailing))
+                                                .help("Update URL")
+                                        }
+                                        
+                                        TextField("Enter URL", text: $editingURL, onCommit: {
+                                            updateWebsiteURL()
+                                        })
+                                        .autocorrectionDisabled(true)
+                                        .textInputAutocapitalization(.never)
+                                        .padding(7)
+                                        .glassEffect(.regular.interactive())
+                                        .glassEffectID("urlbar", in: namespace)
+                                        .glassEffectTransition(.matchedGeometry(properties: [.frame], anchor: .trailing))
+                                        
+                                        
+                                        
+                                        // Close button
+                                        Button {
+                                            withAnimation(.easeInOut(duration: 0.25)) {
+                                                shrinkWebView = true
+                                            }
+                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                                                self.popoverWebview = nil
+                                                self.currentWebsiteElement = nil
+                                                self.currentWebviewURL = nil
+                                                self.shouldShowUpdateButton = false
+                                            }
+                                        } label: {
+                                            Label("Close", systemImage: "xmark")
+                                                .padding(2)
+                                        }.buttonStyle(.glass)
+                                            .glassEffectID("close", in: namespace)
+                                            .glassEffectTransition(.matchedGeometry(properties: [.frame], anchor: .trailing))
+                                    }
+                                }//.animation(.easeInOut)
                                 
                                 WebView(popoverWebview)
                                     .cornerRadius(15)
                             }
                             .frame(width: bigGeo.size.width * (2/3))
                             .padding(.vertical, 30)
-                                .overlay(alignment: .topTrailing) {
-                                    Button {
-                                        withAnimation(.easeInOut(duration: 0.25)) {
-                                            shrinkWebView = true
-                                        }
-                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                                            self.popoverWebview = nil
-                                            self.currentWebsiteElement = nil
-                                        }
-                                    } label: {
-                                        Label("Close", systemImage: "xmark")
-                                    }.buttonStyle(.glass)
-                                    
-                                }
                                 .scaleEffect(shrinkWebView ? 0.0: 1.0)
                         }
                             .onAppear() {
@@ -395,6 +430,23 @@ struct ContentView: View {
                                     shrinkWebView = false
                                 }
                             }
+                            .onChange(of: self.popoverWebview?.url?.absoluteURL, { oldValue, newValue in
+                                Task {
+                                    self.currentWebviewURL = newValue
+                                    // Update button visibility based on URL comparison
+                                    if let currentURL = newValue,
+                                       let element = currentWebsiteElement,
+                                       case .website(let savedURL) = element.type {
+                                        withAnimation {
+                                            self.shouldShowUpdateButton = currentURL.absoluteString != savedURL
+                                        }
+                                    } else {
+                                        withAnimation {
+                                            self.shouldShowUpdateButton = false
+                                        }
+                                    }
+                                }
+                            })
                     }
                 }.zIndex(103)
             }
@@ -579,20 +631,16 @@ struct ContentView: View {
     
     private func moveToTop(element: CanvasElement) {
         guard let idx = canvas.elements.firstIndex(where: { $0.id == element.id }) else { return }
-        var newElements = canvas.elements
-        let movedElement = newElements.remove(at: idx)
-        newElements.append(movedElement)
-        canvas.elements = newElements
+        let movedElement = canvas.elements.remove(at: idx)
+        canvas.elements.append(movedElement)
         selectedElement = movedElement
         try? modelContext.save()
     }
     
     private func moveToBottom(element: CanvasElement) {
         guard let idx = canvas.elements.firstIndex(where: { $0.id == element.id }) else { return }
-        var newElements = canvas.elements
-        let movedElement = newElements.remove(at: idx)
-        newElements.insert(movedElement, at: 0)
-        canvas.elements = newElements
+        let movedElement = canvas.elements.remove(at: idx)
+        canvas.elements.insert(movedElement, at: 0)
         selectedElement = movedElement
         try? modelContext.save()
     }
@@ -608,6 +656,17 @@ struct ContentView: View {
             let request = URLRequest(url: url)
             popoverWebview?.load(request)
         }
+        
+        try? modelContext.save()
+    }
+    
+    private func updateElementWithCurrentURL() {
+        guard let currentElement = currentWebsiteElement,
+              let currentURL = currentWebviewURL else { return }
+        
+        currentElement.type = .website(currentURL.absoluteString)
+        selectedElement = currentElement
+        editingURL = currentURL.absoluteString
         
         try? modelContext.save()
     }

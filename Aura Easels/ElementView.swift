@@ -262,24 +262,37 @@ struct ElementView: View {
 //                        }
 //                }
                 if let linkURL = URL(string: url) {
-                    GeometryReader { geo in
-                        let scale = calculateScale(
-                            available: geo.size,
-                            content: linkPreviewSize
-                        )
+                    //ZStack {
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(element.color.opacity(0.5))
+                            .blur(radius: 10)
+                            .frame(
+                                width: element.size.width,
+                                height: element.size.height
+                            )
+                            .zIndex(-1)
+                            .position(element.position)
+                            .offset(dragOffset)
                         
-                        LinkPreview(
-                            previewURL: linkURL,
-                            measuredSize: $linkPreviewSize
-                        )
-                        .id(url) // Force recreation when URL changes
-                        .shadow(color: element.color.opacity(0.5), radius: 10, x: 0, y: 0)
-                        .scaleEffect(scale, anchor: .center)
-                        .frame(
-                            width: geo.size.width,
-                            height: geo.size.height
-                        )
-                    }
+                        GeometryReader { geo in
+                            let scale = calculateScale(
+                                available: geo.size,
+                                content: linkPreviewSize
+                            )
+                            
+                            LinkPreview(
+                                previewURL: linkURL,
+                                measuredSize: $linkPreviewSize
+                            )
+                            .id(url) // Force recreation when URL changes
+                            //.shadow(color: element.color.opacity(0.5), radius: 10, x: 0, y: 0)
+                            .scaleEffect(scale, anchor: .center)
+                            .frame(
+                                width: geo.size.width,
+                                height: geo.size.height
+                            )
+                        }//.zIndex(10)
+                    //}
                     .frame(
                         width: element.size.width,
                         height: element.size.height
