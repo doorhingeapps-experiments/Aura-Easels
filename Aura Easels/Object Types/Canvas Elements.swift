@@ -46,6 +46,7 @@ class CanvasElement {
     var colorBlue: Double
     var colorAlpha: Double
     var zOrder: Int
+    var cornerRadius: Double
     
     init(type: ElementType, position: CGPoint, size: CGSize, color: Color) {
         self.id = UUID().uuidString
@@ -64,6 +65,7 @@ class CanvasElement {
         self.colorBlue = blue
         self.colorAlpha = alpha
         self.zOrder = 0
+        self.cornerRadius = 0
         
         // Set type-specific properties
         switch type {

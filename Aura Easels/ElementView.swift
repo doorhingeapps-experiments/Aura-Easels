@@ -28,6 +28,7 @@ struct ElementView: View {
     let onMoveToBottom: () -> Void
     let onDelete: () -> Void
     let onTextStyleChange: (TextStyleOptions) -> Void
+    let onCornerRadiusChange: (Double) -> Void
     
     @State var webPage = WebPage()
     @State var finishedLoading = false
@@ -188,7 +189,7 @@ struct ElementView: View {
                 }
 
             case .rectangle:
-                Rectangle()
+                RoundedRectangle(cornerRadius: element.cornerRadius)
                     .fill(element.color)
                     .frame(width: element.size.width, height: element.size.height)
                     .background(content: {
@@ -263,7 +264,7 @@ struct ElementView: View {
 //                }
                 if let linkURL = URL(string: url) {
                     //ZStack {
-                        RoundedRectangle(cornerRadius: 10)
+                        RoundedRectangle(cornerRadius: element.cornerRadius)
                             .fill(element.color.opacity(0.5))
                             .blur(radius: 10)
                             .frame(
@@ -285,6 +286,7 @@ struct ElementView: View {
                                 measuredSize: $linkPreviewSize
                             )
                             .id(url) // Force recreation when URL changes
+                            .clipShape(RoundedRectangle(cornerRadius: element.cornerRadius))
                             //.shadow(color: element.color.opacity(0.5), radius: 10, x: 0, y: 0)
                             .scaleEffect(scale, anchor: .center)
                             .frame(
@@ -477,6 +479,16 @@ struct ElementView: View {
             }
         }
         
+        if case .rectangle = element.type {
+            Menu("Corner Radius") {
+                cornerRadiusMenuItems
+            }
+        } else if case .website = element.type {
+            Menu("Corner Radius") {
+                cornerRadiusMenuItems
+            }
+        }
+        
         Button("Move to Top") {
             onMoveToTop()
         }
@@ -487,6 +499,35 @@ struct ElementView: View {
         
         Button("Delete", role: .destructive) {
             onDelete()
+        }
+    }
+    
+    @ViewBuilder
+    private var cornerRadiusMenuItems: some View {
+        if case .rectangle = element.type {
+            Button("None (0)") {
+                onCornerRadiusChange(0)
+            }
+        }
+        
+        Button("5") {
+            onCornerRadiusChange(5)
+        }
+        
+        Button("10") {
+            onCornerRadiusChange(10)
+        }
+        
+        Button("15") {
+            onCornerRadiusChange(15)
+        }
+        
+        Button("20") {
+            onCornerRadiusChange(20)
+        }
+        
+        Button("25") {
+            onCornerRadiusChange(25)
         }
     }
 }

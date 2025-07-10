@@ -23,6 +23,8 @@ struct ContentView: View {
     @State private var resizeStartSize: CGSize? = nil
     @State private var resizeStartPosition: CGPoint? = nil
     
+    @State var showDeleteIcon = false
+    
     // Box selection state
     @State private var isBoxSelecting: Bool = false
     @State private var boxSelectionStart: CGPoint = .zero
@@ -50,14 +52,16 @@ struct ContentView: View {
     var body: some View {
         GeometryReader { bigGeo in
             ZStack(alignment: .top) {
-                HStack(spacing: 10) {
-                    //GlassEffectContainer {
+                GlassEffectContainer {
+                    HStack(spacing: 10) {
                         Button(action: {
                             showSettings.toggle()
                         }) {
                             Image(systemName: "gear")
                                 .frame(height: 30)
                         }.buttonStyle(.glass)
+                            .glassEffectID("settings", in: namespace)
+                            .glassEffectTransition(.matchedGeometry(properties: [.frame], anchor: .trailing))
                         
                         Button {
                             let textStyle = TextStyleOptions(fontDesign: "regular", fontSize: 20, fontweight: "bold", alignment: "center")
@@ -67,6 +71,8 @@ struct ContentView: View {
                             Image(systemName: "textformat")
                                 .frame(height: 30)
                         }.buttonStyle(.glass)
+                            .glassEffectID("text", in: namespace)
+                            .glassEffectTransition(.matchedGeometry(properties: [.frame], anchor: .trailing))
                         
                         Button {
                             add(.rectangle)
@@ -74,6 +80,8 @@ struct ContentView: View {
                             Image(systemName: "rectangle")
                                 .frame(height: 30)
                         }.buttonStyle(.glass)
+                            .glassEffectID("rectangle", in: namespace)
+                            .glassEffectTransition(.matchedGeometry(properties: [.frame], anchor: .trailing))
                         
                         Button {
                             add(.oval)
@@ -81,6 +89,8 @@ struct ContentView: View {
                             Image(systemName: "circle")
                                 .frame(height: 30)
                         }.buttonStyle(.glass)
+                            .glassEffectID("circle", in: namespace)
+                            .glassEffectTransition(.matchedGeometry(properties: [.frame], anchor: .trailing))
                         
                         Button {
                             add(.line(0.0))
@@ -88,22 +98,40 @@ struct ContentView: View {
                             Image(systemName: "line.diagonal")
                                 .frame(height: 30)
                         }.buttonStyle(.glass)
-                    
-                    Button {
-                        add(.website("https://google.com"))
-                    } label: {
-                        Image(systemName: "globe.desk")
-                    }.buttonStyle(.glass)
-                    
-                    if selectedElement != nil || !selectedElements.isEmpty {
+                            .glassEffectID("line", in: namespace)
+                            .glassEffectTransition(.matchedGeometry(properties: [.frame], anchor: .trailing))
+                        
                         Button {
-                            deleteSelected()
+                            add(.website("https://www.google.com/"))
                         } label: {
-                            Image(systemName: "trash")
-                                .frame(height: 30)
+                            Image(systemName: "globe.desk")
                         }.buttonStyle(.glass)
-                            .keyboardShortcut(.delete, modifiers: [])
-                    }
+                            .glassEffectID("website", in: namespace)
+                            .glassEffectTransition(.matchedGeometry(properties: [.frame], anchor: .trailing))
+                        
+                        //if selectedElement != nil || !selectedElements.isEmpty {
+                        if showDeleteIcon {
+                            Button {
+                                deleteSelected()
+                            } label: {
+                                Image(systemName: "trash")
+                                    .frame(height: 30)
+                            }.buttonStyle(.glass)
+                                .keyboardShortcut(.delete, modifiers: [])
+                                .glassEffectID("delete", in: namespace)
+                                .glassEffectTransition(.matchedGeometry(properties: [.frame], anchor: .leading))
+                        }
+                    }//.animation(.easeInOut, value: selectedElement)
+                        .onChange(of: selectedElement) { oldValue, newValue in
+                            withAnimation(.easeInOut) {
+                                if selectedElement != nil || !selectedElements.isEmpty {
+                                    showDeleteIcon = true
+                                }
+                                else {
+                                    showDeleteIcon = false
+                                }
+                            }
+                        }
                         
 //                        Button("Add Text") {
 //                            let textStyle = TextStyleOptions(fontDesign: "regular", fontSize: 20, fontweight: "bold", alignment: "center")
@@ -289,6 +317,9 @@ struct ContentView: View {
                                         },
                                         onTextStyleChange: { newStyle in
                                             updateTextStyle(of: element, to: newStyle)
+                                        },
+                                        onCornerRadiusChange: { cornerRadius in
+                                            updateCornerRadius(of: element, to: cornerRadius)
                                         }
                                     )
                                 }
@@ -627,6 +658,12 @@ struct ContentView: View {
     
     private func updateColor(of element: CanvasElement, to color: Color) {
         element.color = color
+        selectedElement = element
+        try? modelContext.save()
+    }
+    
+    private func updateCornerRadius(of element: CanvasElement, to cornerRadius: Double) {
+        element.cornerRadius = cornerRadius
         selectedElement = element
         try? modelContext.save()
     }
