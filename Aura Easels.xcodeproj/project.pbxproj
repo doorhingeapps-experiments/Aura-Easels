@@ -17,6 +17,7 @@
 		B9C43F072E19054600010E99 /* hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9C43F062E19054600010E99 /* hex.swift */; };
 		B9C43F092E19200200010E99 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9C43F082E19200200010E99 /* MainView.swift */; };
 		B9C43F0B2E1A570D00010E99 /* ElementConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9C43F0A2E1A570D00010E99 /* ElementConstants.swift */; };
+		B9FF87562E1F0371001471FC /* ResizingCursor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9FF87552E1F0370001471FC /* ResizingCursor.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -31,6 +32,7 @@
 		B9C43F082E19200200010E99 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		B9C43F0A2E1A570D00010E99 /* ElementConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElementConstants.swift; sourceTree = "<group>"; };
 		B9EE89272E147BA200AB6ACE /* Aura Easels.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Aura Easels.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		B9FF87552E1F0370001471FC /* ResizingCursor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResizingCursor.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -52,6 +54,7 @@
 				B9C43EF82E18E5CA00010E99 /* ContentView.swift */,
 				B9C43F042E18ED6C00010E99 /* ElementView.swift */,
 				B9C43EF92E18E5CA00010E99 /* LinkPresentation.swift */,
+				B9FF87552E1F0370001471FC /* ResizingCursor.swift */,
 				B9C43EFF2E18E5CD00010E99 /* Object Types */,
 				B9C43EF62E18E5CA00010E99 /* Assets.xcassets */,
 			);
@@ -165,6 +168,7 @@
 				B9C43F032E18ED1400010E99 /* Canvas Elements.swift in Sources */,
 				B9C43EFC2E18E5CA00010E99 /* ContentView.swift in Sources */,
 				B9C43EFD2E18E5CA00010E99 /* LinkPresentation.swift in Sources */,
+				B9FF87562E1F0371001471FC /* ResizingCursor.swift in Sources */,
 				B9C43F012E18E5E400010E99 /* TextStyleOptions.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -316,6 +320,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.doorhingeapps.Aura-Easels";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
@@ -347,6 +353,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.doorhingeapps.Aura-Easels";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;

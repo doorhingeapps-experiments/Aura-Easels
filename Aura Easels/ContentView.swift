@@ -10,7 +10,9 @@ import WebKit
 // MARK: – Main View
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
-    let canvas: Canvas
+//    let canvas: Canvas
+    @Bindable var canvas: Canvas
+    
     @State private var selectedElement: CanvasElement? = nil
     @State private var selectedElements: Set<String> = []
     @State private var editingText: String = ""
@@ -129,7 +131,7 @@ struct ContentView: View {
                 VStack {
                     GeometryReader { geo in
                         let screenH = geo.size.height
-                        let lastBottom = canvas.elements.map { $0.position.y + $0.size.height/2 }.max() ?? 0
+                        let lastBottom = canvas.elements.sorted(by: { $0.zOrder < $1.zOrder }).map { $0.position.y + $0.size.height/2 }.max() ?? 0
                         let canvasH = max(screenH, lastBottom + screenH)
                         
                         ScrollView(.vertical) {
@@ -170,7 +172,7 @@ struct ContentView: View {
                                             }
                                     )
                                 
-                                ForEach(canvas.elements, id: \.id) { element in
+                                ForEach(canvas.elements.sorted(by: { $0.zOrder < $1.zOrder }), id: \.id) { element in
                                     ElementView(
                                         element: element,
                                         isSelected: selectedElements.contains(element.id) || selectedElement?.id == element.id,
@@ -629,21 +631,18 @@ struct ContentView: View {
         try? modelContext.save()
     }
     
-    private func moveToTop(element: CanvasElement) {
-        guard let idx = canvas.elements.firstIndex(where: { $0.id == element.id }) else { return }
-        let movedElement = canvas.elements.remove(at: idx)
-        canvas.elements.append(movedElement)
-        selectedElement = movedElement
+    func moveToTop(element: CanvasElement) {
+        let maxZOrder = canvas.elements.map { $0.zOrder }.max() ?? 0
+        element.zOrder = maxZOrder + 1
         try? modelContext.save()
     }
-    
-    private func moveToBottom(element: CanvasElement) {
-        guard let idx = canvas.elements.firstIndex(where: { $0.id == element.id }) else { return }
-        let movedElement = canvas.elements.remove(at: idx)
-        canvas.elements.insert(movedElement, at: 0)
-        selectedElement = movedElement
+
+    func moveToBottom(element: CanvasElement) {
+        let minZOrder = canvas.elements.map { $0.zOrder }.min() ?? 0
+        element.zOrder = minZOrder - 1
         try? modelContext.save()
     }
+
     
     private func updateWebsiteURL() {
         guard let currentElement = currentWebsiteElement else { return }
@@ -968,6 +967,7 @@ struct ResizeHandleView: View {
                 
             })
             .contentShape(Rectangle())
+            .pointingHandCursor()
             .frame(width: 44, height: 44)
             .scaleEffect(isDragging ? 1.5 : 1)
             .animation(.easeInOut(duration: 0.1), value: isDragging)

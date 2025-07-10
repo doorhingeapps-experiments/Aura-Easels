@@ -16,7 +16,7 @@ import Foundation
 class Canvas {
     @Attribute(.unique) var id: String
     var name: String
-    var elements: [CanvasElement]
+    @Relationship var elements: [CanvasElement]
     var createdAt: Date
     
     init(name: String) {
@@ -45,6 +45,7 @@ class CanvasElement {
     var colorGreen: Double
     var colorBlue: Double
     var colorAlpha: Double
+    var zOrder: Int
     
     init(type: ElementType, position: CGPoint, size: CGSize, color: Color) {
         self.id = UUID().uuidString
@@ -62,6 +63,7 @@ class CanvasElement {
         self.colorGreen = green
         self.colorBlue = blue
         self.colorAlpha = alpha
+        self.zOrder = 0
         
         // Set type-specific properties
         switch type {
