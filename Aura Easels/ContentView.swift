@@ -6,6 +6,27 @@ import SwiftUI
 import SwiftData
 import WebKit
 
+// MARK: - Tool Types
+enum ToolType: String, CaseIterable {
+    case select = "Select"
+    case text = "Text"
+    case rectangle = "Rectangle"
+    case oval = "Oval"
+    case line = "Line"
+    case website = "Website"
+    
+    var systemImage: String {
+        switch self {
+        case .select: return "pointer.arrow"
+        case .text: return "textformat"
+        case .rectangle: return "rectangle"
+        case .oval: return "circle"
+        case .line: return "line.diagonal"
+        case .website: return "globe.desk"
+        }
+    }
+}
+
 // MARK: - WKWebView Wrapper
 struct WKWebViewWrapper: UIViewRepresentable {
     let url: URL?
@@ -59,6 +80,7 @@ struct ContentView: View {
     @State private var selectedElements: Set<String> = []
     @State private var editingText: String = ""
     @State private var isEditingText: Bool = false
+    @State private var selectedTool: ToolType = .select
     @State private var dragOffset: CGSize = .zero
     @State private var groupDragOffset: CGSize = .zero
     @State private var isResizing: Bool = false
@@ -101,56 +123,104 @@ struct ContentView: View {
                             showSettings.toggle()
                         }) {
                             Image(systemName: "gear")
-                                .frame(height: 30)
-                        }.buttonStyle(.glass)
+                                .frame(width: 30, height: 30)
+                                .padding(.vertical, 10)
+                                .padding(.horizontal, 10)
+                                .foregroundStyle(Color(.label))
+                                .glassEffect(.regular)
+                        }//.buttonStyle(.glass)
                             .glassEffectID("settings", in: namespace)
-                            .glassEffectTransition(.matchedGeometry(properties: [.frame], anchor: .trailing))
+                            .glassEffectTransition(.matchedGeometry)
                         
                         Button {
-                            let textStyle = TextStyleOptions(fontDesign: "regular", fontSize: 20, fontweight: "bold", alignment: "center")
-                            modelContext.insert(textStyle)
-                            add(.text("New Text", textStyle))
+                            withAnimation(.easeInOut) {
+                                selectedTool = selectedTool == .select ? .select : .select
+                            }
                         } label: {
-                            Image(systemName: "textformat")
-                                .frame(height: 30)
-                        }.buttonStyle(.glass)
+                            Image(systemName: ToolType.select.systemImage)
+                                .frame(width: 30, height: 30)
+                                .padding(.vertical, 10)
+                                .padding(.horizontal, 10)
+                                .foregroundStyle(Color(.label))
+                                .glassEffect(.regular.tint(Color.blue.opacity(selectedTool == .select ? 0.75 : 0)))
+                        }//.buttonStyle(.glass)
+                            .glassEffectID("select", in: namespace)
+                            .glassEffectTransition(.matchedGeometry)
+                        
+                        Button {
+                            withAnimation(.easeInOut) {
+                                selectedTool = selectedTool == .text ? .select : .text
+                            }
+                        } label: {
+                            Image(systemName: ToolType.text.systemImage)
+                                .frame(width: 30, height: 30)
+                                .padding(.vertical, 10)
+                                .padding(.horizontal, 10)
+                                .foregroundStyle(Color(.label))
+                                .glassEffect(.regular.tint(Color.blue.opacity(selectedTool == .text ? 0.75 : 0)))
+                        }
                             .glassEffectID("text", in: namespace)
-                            .glassEffectTransition(.matchedGeometry(properties: [.frame], anchor: .trailing))
+                            .glassEffectTransition(.matchedGeometry)
                         
                         Button {
-                            add(.rectangle)
+                            withAnimation(.easeInOut) {
+                                selectedTool = selectedTool == .rectangle ? .select : .rectangle
+                            }
                         } label: {
-                            Image(systemName: "rectangle")
-                                .frame(height: 30)
-                        }.buttonStyle(.glass)
+                            Image(systemName: ToolType.rectangle.systemImage)
+                                .frame(width: 30, height: 30)
+                                .padding(.vertical, 10)
+                                .padding(.horizontal, 10)
+                                .foregroundStyle(Color(.label))
+                                .glassEffect(.regular.tint(Color.blue.opacity(selectedTool == .rectangle ? 0.75 : 0)))
+                        }
                             .glassEffectID("rectangle", in: namespace)
-                            .glassEffectTransition(.matchedGeometry(properties: [.frame], anchor: .trailing))
+                            .glassEffectTransition(.matchedGeometry)
                         
                         Button {
-                            add(.oval)
+                            withAnimation(.easeInOut) {
+                                selectedTool = selectedTool == .oval ? .select : .oval
+                            }
                         } label: {
-                            Image(systemName: "circle")
-                                .frame(height: 30)
-                        }.buttonStyle(.glass)
+                            Image(systemName: ToolType.oval.systemImage)
+                                .frame(width: 30, height: 30)
+                                .padding(.vertical, 10)
+                                .padding(.horizontal, 10)
+                                .foregroundStyle(Color(.label))
+                                .glassEffect(.regular.tint(Color.blue.opacity(selectedTool == .oval ? 0.75 : 0)))
+                        }
                             .glassEffectID("circle", in: namespace)
-                            .glassEffectTransition(.matchedGeometry(properties: [.frame], anchor: .trailing))
+                            .glassEffectTransition(.matchedGeometry)
                         
                         Button {
-                            add(.line(0.0))
+                            withAnimation(.easeInOut) {
+                                selectedTool = selectedTool == .line ? .select : .line
+                            }
                         } label: {
-                            Image(systemName: "line.diagonal")
-                                .frame(height: 30)
-                        }.buttonStyle(.glass)
+                            Image(systemName: ToolType.line.systemImage)
+                                .frame(width: 30, height: 30)
+                                .padding(.vertical, 10)
+                                .padding(.horizontal, 10)
+                                .foregroundStyle(Color(.label))
+                                .glassEffect(.regular.tint(Color.blue.opacity(selectedTool == .line ? 0.75 : 0)))
+                        }
                             .glassEffectID("line", in: namespace)
-                            .glassEffectTransition(.matchedGeometry(properties: [.frame], anchor: .trailing))
+                            .glassEffectTransition(.matchedGeometry)
                         
                         Button {
-                            add(.website("https://www.google.com/"))
+                            withAnimation(.easeInOut) {
+                                selectedTool = selectedTool == .website ? .select : .website
+                            }
                         } label: {
-                            Image(systemName: "globe.desk")
-                        }.buttonStyle(.glass)
+                            Image(systemName: ToolType.website.systemImage)
+                                .frame(width: 30, height: 30)
+                                .padding(.vertical, 10)
+                                .padding(.horizontal, 10)
+                                .foregroundStyle(Color(.label))
+                                .glassEffect(.regular.tint(Color.blue.opacity(selectedTool == .website ? 0.75 : 0)))
+                        }
                             .glassEffectID("website", in: namespace)
-                            .glassEffectTransition(.matchedGeometry(properties: [.frame], anchor: .trailing))
+                            .glassEffectTransition(.matchedGeometry)
                         
                         if selectedElement != nil || !selectedElements.isEmpty {
                         //if showDeleteIcon {
@@ -158,13 +228,19 @@ struct ContentView: View {
                                 deleteSelected()
                             } label: {
                                 Image(systemName: "trash")
-                                    .frame(height: 30)
-                            }.buttonStyle(.glass)
+                                    .frame(width: 30, height: 30)
+                                    .padding(.vertical, 10)
+                                    .padding(.horizontal, 10)
+                                    .foregroundStyle(Color(.label))
+                                    .glassEffect(.regular)
+                            }
                                 .keyboardShortcut(.delete, modifiers: [])
                                 .glassEffectID("delete", in: namespace)
-                                .glassEffectTransition(.matchedGeometry(properties: [.frame], anchor: .leading))
+                                .glassEffectTransition(.matchedGeometry)
                         }
-                    }.animation(.easeInOut, value: selectedElement)
+                    }
+                    .animation(.easeInOut, value: selectedElement)
+                    .animation(.easeInOut, value: selectedTool)
 //                        .onChange(of: selectedElement) { oldValue, newValue in
 //                            withAnimation(.easeInOut) {
 //                                if selectedElement != nil || !selectedElements.isEmpty {
@@ -232,16 +308,34 @@ struct ContentView: View {
                                 Rectangle()
                                     .fill(Color.gray.opacity(0.1))
                                     .border(Color.gray, width: 1)
-                                    .onTapGesture {
-                                        selectedElement = nil
-                                        selectedElements.removeAll()
-                                        isEditingText = false
+                                    .onTapGesture { location in
+                                        if selectedTool == .select {
+                                            selectedElement = nil
+                                            selectedElements.removeAll()
+                                            isEditingText = false
+                                        } else {
+                                            createElementWithTool(at: location)
+                                            selectedTool = .select // Return to select tool after creation
+                                        }
                                     }
+                                #if targetEnvironment(macCatalyst)
+                                    .onHover { isHovering in
+                                        if isHovering {
+                                            if selectedTool == .select {
+                                                NSCursor.arrow.set()
+                                            } else {
+                                                NSCursor.crosshair.set()
+                                            }
+                                        } else {
+                                            NSCursor.arrow.set()
+                                        }
+                                    }
+                                #endif
                                     .gesture(
                                         DragGesture(minimumDistance: 20)
                                             .onChanged { value in
-                                                // Only allow box selection if no single item is selected with resize handles
-                                                guard selectedElement == nil else { return }
+                                                // Only allow box selection if in select mode and no single item is selected with resize handles
+                                                guard selectedTool == .select && selectedElement == nil else { return }
                                                 
                                                 if !isBoxSelecting {
                                                     isBoxSelecting = true
@@ -478,7 +572,7 @@ struct ContentView: View {
                                                     .padding(2)
                                             }.buttonStyle(.glass)
                                                 .glassEffectID("updateurl", in: namespace)
-                                                .glassEffectTransition(.matchedGeometry(properties: [.frame], anchor: .trailing))
+                                                .glassEffectTransition(.matchedGeometry)
                                                 .help("Update URL")
                                         }
                                         
@@ -490,7 +584,7 @@ struct ContentView: View {
                                         .padding(7)
                                         .glassEffect(.regular.interactive())
                                         .glassEffectID("urlbar", in: namespace)
-                                        .glassEffectTransition(.matchedGeometry(properties: [.frame], anchor: .trailing))
+                                        .glassEffectTransition(.matchedGeometry)
                                         
                                         
                                         
@@ -510,7 +604,7 @@ struct ContentView: View {
                                                 .padding(2)
                                         }.buttonStyle(.glass)
                                             .glassEffectID("close", in: namespace)
-                                            .glassEffectTransition(.matchedGeometry(properties: [.frame], anchor: .trailing))
+                                            .glassEffectTransition(.matchedGeometry)
                                     }
                                 }//.animation(.easeInOut)
                                 
@@ -670,6 +764,45 @@ struct ContentView: View {
         let defaultColor = getDefaultColor(for: type)
         let defaultSize = ElementConstants.defaultSize(for: type)
         let newElem = CanvasElement(type: type, position: .init(x: 200, y: 200), size: defaultSize, color: defaultColor)
+        canvas.elements.append(newElem)
+        modelContext.insert(newElem)
+        selectedElement = newElem
+        try? modelContext.save()
+    }
+    
+    private func createElementWithTool(at location: CGPoint) {
+        let defaultColor: Color
+        let elementType: ElementType
+        let defaultSize: CGSize
+        
+        switch selectedTool {
+        case .select:
+            return // Do nothing for select tool
+        case .text:
+            let textStyle = TextStyleOptions(fontDesign: "regular", fontSize: 20, fontweight: "bold", alignment: "center")
+            modelContext.insert(textStyle)
+            elementType = .text("New Text", textStyle)
+            defaultColor = .black
+            defaultSize = ElementConstants.defaultSize(for: elementType)
+        case .rectangle:
+            elementType = .rectangle
+            defaultColor = .blue
+            defaultSize = ElementConstants.defaultSize(for: elementType)
+        case .oval:
+            elementType = .oval
+            defaultColor = .blue
+            defaultSize = ElementConstants.defaultSize(for: elementType)
+        case .line:
+            elementType = .line(0.0)
+            defaultColor = .blue
+            defaultSize = ElementConstants.defaultSize(for: elementType)
+        case .website:
+            elementType = .website("https://www.google.com/")
+            defaultColor = .black
+            defaultSize = ElementConstants.defaultSize(for: elementType)
+        }
+        
+        let newElem = CanvasElement(type: elementType, position: location, size: defaultSize, color: defaultColor)
         canvas.elements.append(newElem)
         modelContext.insert(newElem)
         selectedElement = newElem
