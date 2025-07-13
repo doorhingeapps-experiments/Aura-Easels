@@ -127,8 +127,8 @@ struct ContentView: View {
                                 .padding(.vertical, 10)
                                 .padding(.horizontal, 10)
                                 .foregroundStyle(Color(.label))
-                                .glassEffect(.regular)
-                        }//.buttonStyle(.glass)
+                                .glassEffect(.clear.interactive())
+                        }
                             .glassEffectID("settings", in: namespace)
                             .glassEffectTransition(.matchedGeometry)
                         
@@ -142,8 +142,8 @@ struct ContentView: View {
                                 .padding(.vertical, 10)
                                 .padding(.horizontal, 10)
                                 .foregroundStyle(Color(.label))
-                                .glassEffect(.regular.tint(Color.blue.opacity(selectedTool == .select ? 0.75 : 0)))
-                        }//.buttonStyle(.glass)
+                                .glassEffect(.clear.interactive().tint(Color.blue.opacity(selectedTool == .select ? 0.75 : 0)))
+                        }
                             .glassEffectID("select", in: namespace)
                             .glassEffectTransition(.matchedGeometry)
                         
@@ -157,7 +157,7 @@ struct ContentView: View {
                                 .padding(.vertical, 10)
                                 .padding(.horizontal, 10)
                                 .foregroundStyle(Color(.label))
-                                .glassEffect(.regular.tint(Color.blue.opacity(selectedTool == .text ? 0.75 : 0)))
+                                .glassEffect(.clear.interactive().tint(Color.blue.opacity(selectedTool == .text ? 0.75 : 0)))
                         }
                             .glassEffectID("text", in: namespace)
                             .glassEffectTransition(.matchedGeometry)
@@ -172,7 +172,7 @@ struct ContentView: View {
                                 .padding(.vertical, 10)
                                 .padding(.horizontal, 10)
                                 .foregroundStyle(Color(.label))
-                                .glassEffect(.regular.tint(Color.blue.opacity(selectedTool == .rectangle ? 0.75 : 0)))
+                                .glassEffect(.clear.interactive().tint(Color.blue.opacity(selectedTool == .rectangle ? 0.75 : 0)))
                         }
                             .glassEffectID("rectangle", in: namespace)
                             .glassEffectTransition(.matchedGeometry)
@@ -187,7 +187,7 @@ struct ContentView: View {
                                 .padding(.vertical, 10)
                                 .padding(.horizontal, 10)
                                 .foregroundStyle(Color(.label))
-                                .glassEffect(.regular.tint(Color.blue.opacity(selectedTool == .oval ? 0.75 : 0)))
+                                .glassEffect(.clear.interactive().tint(Color.blue.opacity(selectedTool == .oval ? 0.75 : 0)))
                         }
                             .glassEffectID("circle", in: namespace)
                             .glassEffectTransition(.matchedGeometry)
@@ -202,7 +202,7 @@ struct ContentView: View {
                                 .padding(.vertical, 10)
                                 .padding(.horizontal, 10)
                                 .foregroundStyle(Color(.label))
-                                .glassEffect(.regular.tint(Color.blue.opacity(selectedTool == .line ? 0.75 : 0)))
+                                .glassEffect(.clear.interactive().tint(Color.blue.opacity(selectedTool == .line ? 0.75 : 0)))
                         }
                             .glassEffectID("line", in: namespace)
                             .glassEffectTransition(.matchedGeometry)
@@ -217,7 +217,7 @@ struct ContentView: View {
                                 .padding(.vertical, 10)
                                 .padding(.horizontal, 10)
                                 .foregroundStyle(Color(.label))
-                                .glassEffect(.regular.tint(Color.blue.opacity(selectedTool == .website ? 0.75 : 0)))
+                                .glassEffect(.clear.interactive().tint(Color.blue.opacity(selectedTool == .website ? 0.75 : 0)))
                         }
                             .glassEffectID("website", in: namespace)
                             .glassEffectTransition(.matchedGeometry)
@@ -232,7 +232,7 @@ struct ContentView: View {
                                     .padding(.vertical, 10)
                                     .padding(.horizontal, 10)
                                     .foregroundStyle(Color(.label))
-                                    .glassEffect(.regular)
+                                    .glassEffect(.clear.interactive())
                             }
                                 .keyboardShortcut(.delete, modifiers: [])
                                 .glassEffectID("delete", in: namespace)
