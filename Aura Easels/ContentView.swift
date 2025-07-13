@@ -6,6 +6,48 @@ import SwiftUI
 import SwiftData
 import WebKit
 
+// MARK: - WKWebView Wrapper
+struct WKWebViewWrapper: UIViewRepresentable {
+    let url: URL?
+    @Binding var currentURL: URL?
+    
+    func makeUIView(context: Context) -> WKWebView {
+        let webView = WKWebView()
+        webView.navigationDelegate = context.coordinator
+        return webView
+    }
+    
+    func updateUIView(_ webView: WKWebView, context: Context) {
+        if let url = url, webView.url != url {
+            let request = URLRequest(url: url)
+            webView.load(request)
+        }
+    }
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+    
+    class Coordinator: NSObject, WKNavigationDelegate {
+        var parent: WKWebViewWrapper
+        
+        init(_ parent: WKWebViewWrapper) {
+            self.parent = parent
+        }
+        
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            parent.currentURL = webView.url
+        }
+        
+        func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+            decisionHandler(.allow)
+            if navigationAction.navigationType == .linkActivated {
+                parent.currentURL = navigationAction.request.url
+            }
+        }
+    }
+}
+
 
 // MARK: – Main View
 struct ContentView: View {
@@ -34,11 +76,12 @@ struct ContentView: View {
     private let minWidth:  CGFloat = ElementConstants.minWidth
     private let minHeight: CGFloat = ElementConstants.minHeight
     
-    @State var popoverWebview: WebPage?
+    @State var showWebView = false
     @State var shrinkWebView = true
     @State var currentWebsiteElement: CanvasElement?
     @State var editingURL: String = ""
     @State var currentWebviewURL: URL?
+    @State var webViewURL: URL?
     
     // Snapping state
     @State var snapIndicatorLines: [SnapLine] = []
@@ -109,8 +152,8 @@ struct ContentView: View {
                             .glassEffectID("website", in: namespace)
                             .glassEffectTransition(.matchedGeometry(properties: [.frame], anchor: .trailing))
                         
-                        //if selectedElement != nil || !selectedElements.isEmpty {
-                        if showDeleteIcon {
+                        if selectedElement != nil || !selectedElements.isEmpty {
+                        //if showDeleteIcon {
                             Button {
                                 deleteSelected()
                             } label: {
@@ -121,17 +164,39 @@ struct ContentView: View {
                                 .glassEffectID("delete", in: namespace)
                                 .glassEffectTransition(.matchedGeometry(properties: [.frame], anchor: .leading))
                         }
-                    }//.animation(.easeInOut, value: selectedElement)
-                        .onChange(of: selectedElement) { oldValue, newValue in
-                            withAnimation(.easeInOut) {
-                                if selectedElement != nil || !selectedElements.isEmpty {
-                                    showDeleteIcon = true
-                                }
-                                else {
-                                    showDeleteIcon = false
-                                }
-                            }
-                        }
+                    }.animation(.easeInOut, value: selectedElement)
+//                        .onChange(of: selectedElement) { oldValue, newValue in
+//                            withAnimation(.easeInOut) {
+//                                if selectedElement != nil || !selectedElements.isEmpty {
+//                                    showDeleteIcon = true
+//                                }
+//                                else {
+//                                    showDeleteIcon = false
+//                                }
+//                                if !selectedElements.isEmpty {
+//                                    showDeleteIcon = true
+//                                }
+//                                else {
+//                                    showDeleteIcon = false
+//                                }
+//                            }
+//                        }
+//                        .onChange(of: selectedElements) { oldValue, newValue in
+//                            withAnimation(.easeInOut) {
+//                                if selectedElement != nil || !selectedElements.isEmpty {
+//                                    showDeleteIcon = true
+//                                }
+//                                else {
+//                                    showDeleteIcon = false
+//                                }
+//                                if !selectedElements.isEmpty {
+//                                    showDeleteIcon = true
+//                                }
+//                                else {
+//                                    showDeleteIcon = false
+//                                }
+//                            }
+//                        }
                         
 //                        Button("Add Text") {
 //                            let textStyle = TextStyleOptions(fontDesign: "regular", fontSize: 20, fontweight: "bold", alignment: "center")
@@ -219,11 +284,9 @@ struct ContentView: View {
                                                     isEditingText = true
                                                 }
                                                 else if case .website(let current) = element.type {
-                                                    let webPage = WebPage()
                                                     if let url = URL(string: current) {
-                                                        let request = URLRequest(url: url)
-                                                        webPage.load(request)
-                                                        popoverWebview = webPage
+                                                        webViewURL = url
+                                                        showWebView = true
                                                         currentWebsiteElement = element
                                                         editingURL = current
                                                     }
@@ -384,7 +447,7 @@ struct ContentView: View {
                 }
                 
                 Group {
-                    if let popoverWebview = popoverWebview {
+                    if showWebView {
                         ZStack {
                             Color.black.opacity(0.25)
                                 .ignoresSafeArea()
@@ -394,7 +457,7 @@ struct ContentView: View {
                                         shrinkWebView = true
                                     }
                                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                                        self.popoverWebview = nil
+                                        self.showWebView = false
                                         self.currentWebsiteElement = nil
                                     }
                                 }
@@ -437,7 +500,7 @@ struct ContentView: View {
                                                 shrinkWebView = true
                                             }
                                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                                                self.popoverWebview = nil
+                                                self.showWebView = false
                                                 self.currentWebsiteElement = nil
                                                 self.currentWebviewURL = nil
                                                 self.shouldShowUpdateButton = false
@@ -451,7 +514,7 @@ struct ContentView: View {
                                     }
                                 }//.animation(.easeInOut)
                                 
-                                WebView(popoverWebview)
+                                WKWebViewWrapper(url: webViewURL, currentURL: $currentWebviewURL)
                                     .cornerRadius(15)
                             }
                             .frame(width: bigGeo.size.width * (2/3))
@@ -463,9 +526,8 @@ struct ContentView: View {
                                     shrinkWebView = false
                                 }
                             }
-                            .onChange(of: self.popoverWebview?.url?.absoluteURL, { oldValue, newValue in
+                            .onChange(of: self.currentWebviewURL, { oldValue, newValue in
                                 Task {
-                                    self.currentWebviewURL = newValue
                                     // Update button visibility based on URL comparison
                                     if let currentURL = newValue,
                                        let element = currentWebsiteElement,
@@ -689,8 +751,7 @@ struct ContentView: View {
         
         // Update the webview with the new URL
         if let url = URL(string: editingURL) {
-            let request = URLRequest(url: url)
-            popoverWebview?.load(request)
+            webViewURL = url
         }
         
         try? modelContext.save()

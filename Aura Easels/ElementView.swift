@@ -30,7 +30,6 @@ struct ElementView: View {
     let onTextStyleChange: (TextStyleOptions) -> Void
     let onCornerRadiusChange: (Double) -> Void
     
-    @State var webPage = WebPage()
     @State var finishedLoading = false
     
     @State private var linkPreviewSize: CGSize = .zero
